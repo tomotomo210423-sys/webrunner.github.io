@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web File Runner Ver.1.0</title>
+    <style>
+        /* =========================================
+           基本設定 (Reset & Base)
+           ========================================= */
+        :root {
+            --bg-body: #f1f5f9;
+            --bg-panel: #ffffff;
+            --text-main: #334155;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --danger-color: #ef4444;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body); color: var(--text-main);
+            display: flex; flex-direction: column; height: 100vh; overflow: hidden; line-height: 1.5;
+        }
+        button { cursor: pointer; font-family: inherit; border: none; background: none; }
+
+        /* =========================================
+           レイアウト構造
+           ========================================= */
+        header {
+            background-color: var(--bg-panel); border-bottom: 1px solid var(--border-color);
+            padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+        }
+        .header-title { display: flex; align-items: center; gap: 8px; font-size: 1.25rem; font-weight: bold; color: #1e293b; }
+        .header-actions { display: flex; gap: 16px; align-items: center; }
+
+        .controls {
+            background-color: #f8fafc; border-bottom: 1px solid var(--border-color);
+            padding: 12px 16px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-shrink: 0;
+        }
+        .file-section { display: flex; align-items: center; gap: 12px; flex: 1; }
+        .action-buttons { display: flex; gap: 8px; }
+
+        .workspace { display: flex; flex: 1; padding: 16px; gap: 16px; overflow: hidden; }
+        .panel {
+            background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+            display: flex; flex-direction: column; flex: 1; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.3s ease;
+        }
+        .panel-header {
+            background-color: #f8fafc; border-bottom: 1px solid var(--border-color); padding: 8px 16px;
+            display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: bold; color: var(--text-muted);
+        }
+        .panel-content { flex: 1; position: relative; display: flex; flex-direction: column; }
+
+        /* =========================================
+           複数ファイル（タブ）のスタイル
+           ========================================= */
+        .file-tabs-container {
+            display: flex; background-color: #f8fafc; border-bottom: 1px solid var(--border-color); align-items: center;
+        }
+        .file-tabs { display: flex; overflow-x: auto; scrollbar-width: none; flex: 1; }
+        .file-tabs::-webkit-scrollbar { display: none; }
+        .file-tab {
+            padding: 8px 16px; font-size: 0.85rem; color: var(--text-muted); border-right: 1px solid var(--border-color);
+            border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 8px; background-color: #f1f5f9;
+        }
+        .file-tab:hover { background-color: white; }
+        .file-tab.active { background-color: white; color: var(--primary-color); border-bottom-color: var(--primary-color); font-weight: bold; }
+        .file-tab-delete {
+            color: #94a3b8; cursor: pointer; border-radius: 50%; display: flex; align-items: center; justify-content: center; width: 18px; height: 18px; transition: 0.2s;
+        }
+        .file-tab-delete:hover { background-color: #e2e8f0; color: var(--danger-color); }
+        
+        #add-file-btn {
+            padding: 0 16px; font-size: 1.2rem; font-weight: bold; color: var(--primary-color); cursor: pointer;
+            transition: 0.2s; background: transparent; border: none; height: 100%; display: flex; align-items: center;
+        }
+        #add-file-btn:hover { background-color: #e0e7ff; }
+
+        /* =========================================
+           各要素のスタイル
+           ========================================= */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px;
+            border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 600; transition: all 0.2s;
+        }
+        .btn-primary { background-color: var(--primary-color); color: white; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2); }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-outline { background-color: white; border: 1px solid #cbd5e1; color: var(--text-main); }
+        .btn-outline:hover { background-color: #f1f5f9; border-color: #94a3b8; }
+        .btn-text { color: var(--text-muted); padding: 6px 12px; }
+        .btn-text:hover { background-color: #f1f5f9; color: var(--text-main); }
+        .btn-text.danger:hover { background-color: #fef2f2; color: var(--danger-color); }
+        .btn-small { padding: 4px 8px; font-size: 0.75rem; border: 1px solid var(--border-color); border-radius: 4px; background: white; }
+        .btn-small:hover { border-color: var(--primary-color); color: var(--primary-color); }
+
+        .file-label { cursor: pointer; } #file-input { display: none; }
+        .file-status { font-size: 0.875rem; color: var(--text-muted); font-weight: 500; }
+
+        #editor {
+            width: 100%; height: 100%; padding: 16px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.875rem; border: none; resize: none; outline: none; line-height: 1.6; color: #1e293b; tab-size: 4;
+            transition: background-color 0.2s;
+        }
+        #editor:disabled { background-color: #f8fafc; color: #94a3b8; }
+
+        #preview-frame { width: 100%; height: 100%; border: none; background-color: white; }
+        .preview-placeholder {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; color: #94a3b8; background-color: rgba(248, 250, 252, 0.5); pointer-events: none;
+        }
+
+        svg { width: 1.2em; height: 1.2em; } .icon-sm { width: 1em; height: 1em; }
+
+        /* スイッチ（オートラン用） */
+        .toggle-switch { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.85rem; font-weight: bold; color: #64748b; }
+        .toggle-switch input { display: none; }
+        .toggle-track { width: 36px; height: 20px; background-color: #cbd5e1; border-radius: 10px; position: relative; transition: 0.3s; }
+        .toggle-thumb { width: 16px; height: 16px; background-color: white; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.3s; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        .toggle-switch input:checked + .toggle-track { background-color: var(--primary-color); }
+        .toggle-switch input:checked + .toggle-track .toggle-thumb { transform: translateX(16px); }
+
+        /* =========================================
+           確実な全画面表示
+           ========================================= */
+        .fullscreen-active {
+            position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important;
+            z-index: 9999 !important; border-radius: 0 !important; border: none !important; margin: 0 !important;
+        }
+
+        /* =========================================
+           モーダル
+           ========================================= */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.2s; padding: 16px;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-content {
+            background-color: white; border-radius: var(--radius-lg); width: 100%; max-width: 800px; height: 90vh;
+            display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); transform: scale(0.95); transition: transform 0.2s;
+        }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        .modal-header {
+            padding: 16px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;
+            background-color: #f8fafc; border-top-left-radius: var(--radius-lg); border-top-right-radius: var(--radius-lg); flex-shrink: 0;
+        }
+        .modal-header h3 { font-size: 1.25rem; color: #1e293b; display: flex; align-items: center; gap: 8px; }
+        .modal-body { padding: 0; overflow-y: auto; color: #334155; font-size: 0.95rem; line-height: 1.7; flex: 1; }
+        .guide-hero { background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); color: white; padding: 32px 24px; text-align: center; }
+        .guide-content { padding: 24px; }
+        .guide-section { margin-bottom: 32px; }
+        .guide-section h4 { color: #4f46e5; margin-bottom: 16px; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #e0e7ff; padding-bottom: 8px; }
+        .guide-card { background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px; }
+        .guide-list { margin-left: 20px; margin-top: 8px; margin-bottom: 8px; }
+        .guide-list li { margin-bottom: 8px; }
+        .code-tag { background-color: #e2e8f0; color: #334155; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.85em; }
+        .faq-item { margin-bottom: 16px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 16px; }
+        .faq-q { font-weight: bold; color: #1e293b; margin-bottom: 4px; display: flex; gap: 8px; }
+        .faq-q::before { content: "Q."; color: #4f46e5; }
+        .faq-a { color: #475569; display: flex; gap: 8px; }
+        .faq-a::before { content: "A."; color: #ef4444; font-weight: bold; }
+        .modal-footer {
+            padding: 16px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;
+            background-color: #f8fafc; border-bottom-left-radius: var(--radius-lg); border-bottom-right-radius: var(--radius-lg); flex-shrink: 0;
+        }
+
+        /* =========================================
+           レスポンシブ (スマホ対応)
+           ========================================= */
+        @media (max-width: 768px) {
+            .header-actions { gap: 8px; }
+            .controls { flex-direction: column; align-items: stretch; }
+            .file-section { flex-direction: column; align-items: flex-start; }
+            .action-buttons { width: 100%; display: flex; }
+            #run-btn { flex: 2; } #download-btn { flex: 1; }
+            .workspace { flex-direction: column; overflow-y: auto; }
+            .panel { min-height: 45vh; flex: none; }
+            .header-title span { display: none; }
+            .btn-text span { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ヘッダー -->
+    <header>
+        <div class="header-title">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
+            <span>Web File Runner <span style="font-size: 0.8em; color: #64748b; font-weight: normal;">Ver.1.0</span></span>
+        </div>
+        <div class="header-actions">
+            <label class="toggle-switch" title="編集時に自動でプレビューを更新します">
+                <input type="checkbox" id="autorun-toggle">
+                <div class="toggle-track"><div class="toggle-thumb"></div></div>
+                <span class="hidden sm:inline">自動実行</span>
+            </label>
+            
+            <button id="help-btn" class="btn btn-text">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span>使い方</span>
+            </button>
+            <button id="reset-btn" class="btn btn-text danger">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                <span>リセット</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- コントロールバー -->
+    <div class="controls">
+        <div class="file-section">
+            <label class="btn btn-outline file-label">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                ファイルを開く
+                <!-- 画像や音声ファイルも選択可能に -->
+                <input type="file" id="file-input" accept=".html,.js,.css,.txt,image/*,audio/*,video/*" multiple>
+            </label>
+            <span id="file-status" class="file-status">1個のファイル</span>
+        </div>
+        
+        <div class="action-buttons">
+            <button id="download-btn" class="btn btn-outline" title="完成したプログラムをHTMLファイルとして保存します">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span class="hidden sm:inline">保存</span>
+            </button>
+            <button id="run-btn" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                コードを実行
+            </button>
+        </div>
+    </div>
+
+    <!-- ワークスペース -->
+    <div class="workspace">
+        <!-- エディタパネル -->
+        <div class="panel">
+            <div class="panel-header" style="text-transform: none;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <svg class="icon-sm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M10 13l-2 2 2 2"/><path d="M14 17l2-2-2-2"/></svg>
+                    エディタ
+                </div>
+            </div>
+            
+            <!-- タブエリア（＋ボタン追加） -->
+            <div class="file-tabs-container">
+                <div id="file-tabs" class="file-tabs"></div>
+                <button id="add-file-btn" title="新しいファイルを作る">+</button>
+            </div>
+            
+            <div class="panel-content">
+                <textarea id="editor" placeholder="ここにコードを入力してください。" spellcheck="false"></textarea>
+            </div>
+        </div>
+
+        <!-- プレビューパネル -->
+        <div id="preview-section" class="panel">
+            <div class="panel-header" style="text-transform: none;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <svg class="icon-sm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    プレビュー
+                </div>
+                <button id="fullscreen-btn" class="btn btn-small">
+                    <span id="fs-text">全画面で表示</span>
+                </button>
+            </div>
+            <div class="panel-content">
+                <iframe id="preview-frame" sandbox="allow-scripts allow-modals allow-same-origin allow-forms allow-popups" src="about:blank"></iframe>
+                <div id="preview-placeholder" class="preview-placeholder">
+                    <svg style="width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.5;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    <p style="font-weight: 500;">「コードを実行」を押すと結果が表示されます</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 使い方ガイド -->
+    <div id="help-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    パーフェクト使い方ガイド 📖 (Ver.1.0)
+                </h3>
+                <button id="close-icon-btn" style="color: #94a3b8; border-radius: 50%; padding: 4px; transition: background 0.2s;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="guide-hero">
+                    <h4>Web File Runner へようこそ！🎉</h4>
+                    <p style="margin-top: 8px; line-height: 1.6;">このツールは、あなたのスマホやPCに入っているプログラムのファイルを、<br>インターネット上のサーバーを使わずに、ブラウザだけで安全に動かせる魔法のツールです✨<br>アプリを作りたい！自作ゲームをテストしたい！そんな時に大活躍します。</p>
+                </div>
+
+                <div class="guide-content">
+                    <div class="guide-section">
+                        <h4>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            基本の使い方と「魔法の合体機能」🧩
+                        </h4>
+                        <p style="margin-bottom: 12px;">「ファイルを開く」ボタンからファイルを選んで、「コードを実行」を押すだけでOK！<br>さらに、<strong>複数のファイルを同時に選ぶと、ツールがファイルの種類を自動で推理し、一つのWebアプリとして合体させてから動かしてくれます。</strong></p>
+                        <div class="guide-card">
+                            <p style="font-weight: bold; margin-bottom: 8px; color: #1e293b;">ファイルの役割（Webアプリの仕組み）</p>
+                            <ul class="guide-list">
+                                <li><strong>📄 .html (骨組み):</strong> 家でいうと「柱」や「壁」。画面に表示される文字やボタンの配置を決めます。</li>
+                                <li><strong>🎨 .css (装飾):</strong> 家でいうと「壁紙」や「家具」。色を変えたり、オシャレなデザインに整えたりします。</li>
+                                <li><strong>⚙️ .js (動作):</strong> 家でいうと「電気」や「水道」。ボタンを押した時にキャラが動いたり、敵にダメージを与えたりする「仕組み」を作ります。（JavaScriptと呼ばれます）</li>
+                            </ul>
+                            <p style="font-size: 0.9em; margin-top: 12px; color: #4f46e5; background: #e0e7ff; padding: 10px; border-radius: 6px;">
+                                💡 <strong>豆知識:</strong> 例えば「index.html」「style.css」「game.js」の3つを一緒に選んで実行すると、ツールが自動で「HTMLの骨組みに、CSSの服を着せて、JSの筋肉を繋げる」というプロの裏技をやってくれます！
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="guide-section">
+                        <h4>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                            開発を助ける強力な機能 🚀
+                        </h4>
+                        <div class="guide-card">
+                            <ul class="guide-list">
+                                <li><strong>🔍 スマホでも見れる「コンソール」:</strong> プログラムに間違い（エラー）があったり、裏側の計算結果を見たい時（<code>console.log</code>と言います）、画面の下に黒い画面がスッと出てきて教えてくれます。スマホでプログラミングの勉強をする時にめちゃくちゃ便利です！</li>
+                                <li><strong>💾 完成品の「保存（ダウンロード）」:</strong> エディタで書き換えたり、合体させたプログラムを、「1つの完成したHTMLファイル」としてあなたの端末に保存できます。作ったゲームを友達に配ることもできちゃいます。</li>
+                                <li><strong>⚡ サクサク開発「自動実行」:</strong> 画面右上のスイッチをONにすると、文字を打つたびに勝手にプレビューが更新されます。色やサイズを細かく調整する時にストレスゼロです。</li>
+                                <li><strong>📝 ブラウザだけでプログラミング開始:</strong> エディタのタブの右側にある<strong>「＋」ボタン</strong>を押せば、新しいカラのファイルを作れます。思いついたらすぐにここから作り始められます！</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="guide-section">
+                        <h4>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            よくある質問・困ったときは（FAQ）❓
+                        </h4>
+                        <div class="faq-item">
+                            <div class="faq-q">🖼️ ゲームで使う画像やBGMは入れられるの？</div>
+                            <div class="faq-a">
+                                <div><strong>はい、入れられます！</strong><br>.png や .jpg、.mp3 などの素材ファイルも一緒に選んでアップロードしてください。コードの中に <code>&lt;img src="hero.png"&gt;</code> のようにファイル名を書くだけで、ツールが自動で結びつけて表示してくれます。</div>
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <div class="faq-q">💾 RPGなどのセーブデータは消えない？</div>
+                            <div class="faq-a">
+                                <div>ブラウザの「ローカルストレージ（安全な金庫のような場所）」に保存されます。ブラウザの履歴やキャッシュ（ゴミ箱のようなもの）を空にしない限り、データはちゃんと残るので安心してください。</div>
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <div class="faq-q">📱 スマホだとプレビュー画面が小さくて遊びにくい…</div>
+                            <div class="faq-a"><div>プレビュー画面の右上にある<strong>「全画面で表示」</strong>ボタンを押してみてください！邪魔な枠が消えて、スマホの画面いっぱいにゲームが広がるので最高に遊びやすくなります。</div></div>
+                        </div>
+                        <div class="faq-item" style="border-bottom: none;">
+                            <div class="faq-q">📄 「.txt」っていうただのメモ帳のファイルでも動く？</div>
+                            <div class="faq-a"><div><strong>動きます！</strong><br>ツールが中身のコードを読んで「あ、これはHTMLだな」「これはJavaScriptのプログラムだな」と推理して、勝手に正しい方法で実行してくれます。</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button id="close-btn-bottom" class="btn btn-primary" style="padding: 12px 32px; font-size: 1.1rem;">分かった！ツールを使う👍</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新規ファイル作成モーダル -->
+    <div id="new-file-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px; height: auto;">
+            <div class="modal-header">
+                <h3>新規ファイル作成</h3>
+                <button id="close-new-file-btn" style="color: #94a3b8; border-radius: 50%; padding: 4px; transition: background 0.2s;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="modal-body" style="padding: 24px;">
+                <p style="margin-bottom: 8px; color: #1e293b; font-weight: bold;">新しいファイルの名前を入力してください</p>
+                <p style="font-size: 0.85em; color: #64748b; margin-bottom: 12px;">例: script.js, style.css, data.txt</p>
+                <input type="text" id="new-file-name-input" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: monospace;" value="new_file.js">
+                <p id="new-file-error" style="color: #ef4444; font-size: 0.85em; margin-top: 8px; display: none;">同じ名前のファイルが既に存在します。</p>
+            </div>
+            <div class="modal-footer">
+                <button id="create-new-file-btn" class="btn btn-primary">作成</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- カスタムアラートモーダル -->
+    <div id="alert-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px; height: auto;">
+            <div class="modal-header">
+                <h3>確認</h3>
+                <button id="close-alert-btn" style="color: #94a3b8; border-radius: 50%; padding: 4px; transition: background 0.2s;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="modal-body" style="padding: 24px;">
+                <p id="alert-message" style="color: #1e293b; font-weight: 500;"></p>
+            </div>
+            <div class="modal-footer" id="alert-footer">
+                <button id="alert-ok-btn" class="btn btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const fileInput = document.getElementById('file-input');
+            const runBtn = document.getElementById('run-btn');
+            const downloadBtn = document.getElementById('download-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const addFileBtn = document.getElementById('add-file-btn');
+            const autorunToggle = document.getElementById('autorun-toggle');
+            const editor = document.getElementById('editor');
+            const previewFrame = document.getElementById('preview-frame');
+            const fileTabsContainer = document.getElementById('file-tabs');
+            const fileStatus = document.getElementById('file-status');
+            const previewPlaceholder = document.getElementById('preview-placeholder');
+            const previewSection = document.getElementById('preview-section');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const fsText = document.getElementById('fs-text');
+            const helpBtn = document.getElementById('help-btn');
+            const helpModal = document.getElementById('help-modal');
+            const closeIconBtn = document.getElementById('close-icon-btn');
+            const closeBtnBottom = document.getElementById('close-btn-bottom');
+
+            // 新規ファイル作成用UI要素
+            const newFileModal = document.getElementById('new-file-modal');
+            const closeNewFileBtn = document.getElementById('close-new-file-btn');
+            const createNewFileBtn = document.getElementById('create-new-file-btn');
+            const newFileNameInput = document.getElementById('new-file-name-input');
+            const newFileError = document.getElementById('new-file-error');
+
+            // カスタムアラート用UI要素
+            const alertModal = document.getElementById('alert-modal');
+            const closeAlertBtn = document.getElementById('close-alert-btn');
+            const alertMessage = document.getElementById('alert-message');
+            const alertOkBtn = document.getElementById('alert-ok-btn');
+            const alertFooter = document.getElementById('alert-footer');
+
+            // カスタムアラート関数
+            function showAlert(message) {
+                alertMessage.textContent = message;
+                alertFooter.innerHTML = '<button id="alert-ok-btn" class="btn btn-primary">OK</button>';
+                document.getElementById('alert-ok-btn').addEventListener('click', () => {
+                    alertModal.classList.remove('active');
+                });
+                alertModal.classList.add('active');
+            }
+
+            // カスタムコンファーム関数
+            function showConfirm(message, onConfirm) {
+                alertMessage.textContent = message;
+                alertFooter.innerHTML = `
+                    <button id="alert-cancel-btn" class="btn btn-outline" style="margin-right: 8px;">キャンセル</button>
+                    <button id="alert-confirm-btn" class="btn btn-primary" style="background-color: var(--danger-color); color: white;">実行する</button>
+                `;
+                document.getElementById('alert-cancel-btn').addEventListener('click', () => {
+                    alertModal.classList.remove('active');
+                });
+                document.getElementById('alert-confirm-btn').addEventListener('click', () => {
+                    alertModal.classList.remove('active');
+                    onConfirm();
+                });
+                alertModal.classList.add('active');
+            }
+
+            closeAlertBtn.addEventListener('click', () => alertModal.classList.remove('active'));
+
+            // --- 状態管理 ---
+            let fileStore = { 'index.html': { type: 'html', originalExt: 'html', content: '' } };
+            let activeFileName = 'index.html';
+            let autorunTimer = null;
+            let lastCompiledHtml = ''; // ダウンロード用に最後に実行したHTMLを保持
+
+            // ==========================================
+            // 自動言語判別機能
+            // ==========================================
+            function getFileType(fileName) {
+                const parts = fileName.split('.');
+                return parts.length > 1 ? parts.pop().toLowerCase() : 'txt';
+            }
+
+            function guessFileTypeFromContent(content, originalExt) {
+                if (originalExt !== 'txt' || !content.trim()) return originalExt;
+                const text = content.trim();
+                const sample = text.slice(0, 1000).toLowerCase();
+
+                if (sample.includes('<!doctype html') || sample.includes('<html') || sample.includes('<body') || sample.includes('<div') || sample.includes('<script')) return 'html';
+
+                let scoreJS = 0; let scoreCSS = 0;
+                const jsKw = ['function ', 'const ', 'let ', 'var ', '=>', 'console.log', 'document.', 'window.'];
+                const cssKw = ['margin:', 'padding:', 'background:', 'color:', 'font-', 'display:', 'border:'];
+
+                jsKw.forEach(kw => { if (text.includes(kw)) scoreJS += 2; });
+                cssKw.forEach(kw => { if (text.includes(kw)) scoreCSS += 1; });
+                if ((text.match(/\{[^}]*:[^}]*\}/g) || []).length > 0) scoreCSS += 3;
+                if ((text.match(/\([^)]*\)/g) || []).length > 0) scoreJS += 2;
+                if ((text.match(/=[^;]+;/g) || []).length > 0) scoreJS += 2;
+
+                if (scoreJS > scoreCSS && scoreJS > 0) return 'js';
+                if (scoreCSS > scoreJS && scoreCSS > 0) return 'css';
+                return 'txt';
+            }
+
+            // ==========================================
+            // UI初期化・タブ管理機能
+            // ==========================================
+            function updateTabs(targetActiveName = null) {
+                fileTabsContainer.innerHTML = '';
+                const fileNames = Object.keys(fileStore);
+                fileStatus.textContent = `${fileNames.length}個のファイル`;
+
+                if (fileNames.length === 0) {
+                    activeFileName = null; editor.value = ''; editor.disabled = true; return;
+                }
+
+                editor.disabled = false;
+                if (targetActiveName && fileStore[targetActiveName]) activeFileName = targetActiveName;
+                else if (!activeFileName || !fileStore[activeFileName]) activeFileName = fileNames[0]; 
+
+                fileNames.forEach(name => {
+                    const tab = document.createElement('div');
+                    tab.className = `file-tab ${name === activeFileName ? 'active' : ''}`;
+                    const titleSpan = document.createElement('span');
+                    
+                    const fileData = fileStore[name];
+                    titleSpan.textContent = (fileData && fileData.originalExt === 'txt' && fileData.type !== 'txt') 
+                        ? `${name} (自動判定: ${fileData.type.toUpperCase()})` : name;
+                    
+                    titleSpan.addEventListener('click', () => updateTabs(name));
+                    
+                    const delSpan = document.createElement('span');
+                    delSpan.className = 'file-tab-delete';
+                    delSpan.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+                    delSpan.addEventListener('click', (e) => { e.stopPropagation(); delete fileStore[name]; updateTabs(); triggerAutoRun(); });
+
+                    tab.appendChild(titleSpan); tab.appendChild(delSpan);
+                    fileTabsContainer.appendChild(tab);
+                });
+
+                // アセット（画像/音声）が選択された場合はエディタをロックする
+                if (fileStore[activeFileName].type === 'asset') {
+                    editor.readOnly = true;
+                    editor.style.backgroundColor = '#f8fafc';
+                    editor.style.color = '#64748b';
+                } else {
+                    editor.readOnly = false;
+                    editor.style.backgroundColor = 'transparent';
+                    editor.style.color = '#1e293b';
+                }
+
+                editor.value = fileStore[activeFileName].content;
+            }
+            updateTabs();
+
+            // ==========================================
+            // イベントリスナー（入力と自動実行・新規追加）
+            // ==========================================
+            function triggerAutoRun() {
+                if (autorunToggle.checked) {
+                    clearTimeout(autorunTimer);
+                    autorunTimer = setTimeout(() => runBtn.click(), 800);
+                }
+            }
+
+            editor.addEventListener('input', () => {
+                if (activeFileName && fileStore[activeFileName]) {
+                    fileStore[activeFileName].content = editor.value;
+                    triggerAutoRun();
+                }
+            });
+            
+            // 新規ファイルの追加ボタン（カスタムモーダル使用）
+            addFileBtn.addEventListener('click', () => {
+                newFileError.style.display = 'none';
+                newFileNameInput.value = `file${Object.keys(fileStore).length}.js`;
+                newFileModal.classList.add('active');
+                setTimeout(() => newFileNameInput.focus(), 100);
+            });
+
+            closeNewFileBtn.addEventListener('click', () => {
+                newFileModal.classList.remove('active');
+            });
+
+            createNewFileBtn.addEventListener('click', () => {
+                let newName = newFileNameInput.value;
+                if (!newName) return;
+                newName = newName.trim();
+                if (fileStore[newName]) {
+                    newFileError.style.display = 'block';
+                    return;
+                }
+                const ext = getFileType(newName);
+                fileStore[newName] = { 
+                    type: (ext==='js'||ext==='css'||ext==='html') ? ext : 'txt', 
+                    originalExt: ext, 
+                    content: '' 
+                };
+                updateTabs(newName);
+                newFileModal.classList.remove('active');
+            });
+
+            fileInput.addEventListener('change', async (e) => {
+                const files = e.target.files;
+                if (files.length === 0) return;
+
+                const keys = Object.keys(fileStore);
+                if (keys.length === 1 && keys[0] === 'index.html' && fileStore['index.html'].content.trim() === '') {
+                    delete fileStore['index.html'];
+                }
+
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const originalExt = getFileType(file.name);
+                    
+                    // 【新機能】画像・音声・動画アセットの処理
+                    if (file.type.startsWith('image/') || file.type.startsWith('audio/') || file.type.startsWith('video/')) {
+                        const url = URL.createObjectURL(file);
+                        fileStore[file.name] = { 
+                            type: 'asset', 
+                            originalExt: originalExt, 
+                            url: url, 
+                            content: `/* アセットファイル: ${file.name} */\n\n※このファイルは画像・音声などの素材データです。\nエディタでの編集はできません。\n\n【使い方】\n他のHTMLやJSファイル内で「${file.name}」と書くだけで自動的に読み込まれます！\n例: <img src="${file.name}">` 
+                        };
+                    } else {
+                        const content = await file.text();
+                        fileStore[file.name] = { type: guessFileTypeFromContent(content, originalExt), originalExt: originalExt, content: content };
+                    }
+                }
+                
+                const newKeys = Object.keys(fileStore);
+                updateTabs(newKeys.find(name => fileStore[name].type === 'html') || newKeys[0]);
+                fileInput.value = ''; 
+                triggerAutoRun();
+            });
+
+            // ==========================================
+            // スマホ用コンソール スクリプトの生成
+            // ==========================================
+            const getConsoleScript = () => `
+<script>
+(function(){
+    const oldLog = console.log; const oldError = console.error; const oldWarn = console.warn;
+    let cEl = null; let cBody = null; let msgCount = 0;
+    
+    function initConsole() {
+        if(cEl) return;
+        cEl = document.createElement('div');
+        cEl.style.cssText = 'position:fixed;bottom:0;left:0;width:100%;height:35%;background:rgba(15,23,42,0.95);color:#fff;font-family:monospace;font-size:12px;z-index:999999;box-sizing:border-box;border-top:3px solid #4f46e5;display:flex;flex-direction:column;box-shadow:0 -5px 15px rgba(0,0,0,0.3);backdrop-filter:blur(4px);';
+        
+        const header = document.createElement('div');
+        header.style.cssText = 'padding:6px 10px;background:#1e293b;border-bottom:1px solid #334155;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;';
+        header.innerHTML = '<span style="font-weight:bold;color:#818cf8;">▶ Console Log</span>';
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.innerText = '閉じる';
+        closeBtn.style.cssText = 'background:#ef4444;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:bold;';
+        closeBtn.onclick = () => { cEl.style.display = 'none'; };
+        header.appendChild(closeBtn);
+        
+        cBody = document.createElement('div');
+        cBody.style.cssText = 'flex:1;overflow-y:auto;padding:10px;';
+        
+        cEl.appendChild(header); cEl.appendChild(cBody);
+        document.body.appendChild(cEl);
+    }
+
+    function print(args, color, bg) {
+        if(document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', () => print(args, color, bg)); return; }
+        if(!document.body) return;
+        initConsole(); cEl.style.display = 'flex';
+        
+        const line = document.createElement('div');
+        line.style.cssText = \`color:\${color};background:\${bg};padding:4px 6px;margin-bottom:2px;border-radius:2px;word-break:break-all;font-family:ui-monospace,SFMono-Regular,monospace;\`;
+        
+        const text = Array.from(args).map(a => {
+            if(a instanceof Error) return a.stack || a.message;
+            if(typeof a === 'object') { try { return JSON.stringify(a, null, 2); } catch(e) { return String(a); } }
+            return String(a);
+        }).join(' ');
+        
+        line.innerText = text;
+        cBody.appendChild(line);
+        cBody.scrollTop = cBody.scrollHeight;
+        
+        msgCount++;
+        if(msgCount > 100) cBody.removeChild(cBody.firstChild); // メモリ制限
+    }
+
+    console.log = function(...args) { oldLog.apply(console, args); print(args, '#10b981', 'transparent'); };
+    console.warn = function(...args) { oldWarn.apply(console, args); print(args, '#f59e0b', 'rgba(245,158,11,0.1)'); };
+    console.error = function(...args) { oldError.apply(console, args); print(args, '#ef4444', 'rgba(239,68,68,0.1)'); };
+    
+    window.addEventListener('error', function(e) {
+        if(e.filename && e.filename.includes('blob:')) console.error(e.message + ' (実行コード エラー)');
+        else console.error(e.message);
+    });
+})();
+<\/script>`;
+
+            // ==========================================
+            // コード実行（魔法の合体ロジック）
+            // ==========================================
+            runBtn.addEventListener('click', () => {
+                const fileNames = Object.keys(fileStore);
+                if (fileNames.length === 0) return;
+
+                let htmlContent = ''; let cssContents = []; let jsContents = [];
+                let assetFiles = {}; // アセットURLの保存用
+
+                fileNames.forEach(name => {
+                    const file = fileStore[name];
+                    if (file.type === 'asset') assetFiles[name] = file.url;
+                    else if (file.type === 'html' && !htmlContent) htmlContent = file.content;
+                    else if (file.type === 'css') cssContents.push(file.content);
+                    else if (file.type === 'js') jsContents.push(file.content);
+                });
+
+                const fallbackBaseHtml = `<!DOCTYPE html>\n<html lang="ja">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">\n    <title>プレビュー</title>\n</head>\n<body>\n</body>\n</html>`;
+
+                if (!htmlContent) {
+                    if (jsContents.length > 0 && cssContents.length === 0) {
+                        htmlContent = fallbackBaseHtml.replace('<body>', `<body style="font-family:sans-serif;padding:20px;color:#334155;background:#f8fafc;"><h3 style="color:#4f46e5;border-bottom:1px solid #e2e8f0;padding-bottom:8px;margin-top:0;">JS 実行完了</h3><p style="font-size:12px;margin-top:12px;">※プログラムがログ(console.log)やエラーを出力した場合、画面下部にコンソールが表示されます。</p>`);
+                    } else if (cssContents.length > 0 && jsContents.length === 0) {
+                        htmlContent = fallbackBaseHtml.replace('<body>', `<body style="padding: 20px; font-family: sans-serif;"><h1>CSS プレビュー領域</h1><p>このテキストや背景に対して、入力したCSSスタイルが適用されます。</p><button style="margin: 16px 0; padding: 8px 16px;">サンプルボタン</button><ul><li>リスト 1</li><li>リスト 2</li></ul>`);
+                    } else {
+                        htmlContent = fallbackBaseHtml.replace('<body>', `<body style="padding:20px;font-family:sans-serif;"><h1>プレビュー</h1><p>プログラムが読み込まれました。</p>`);
+                    }
+                } else {
+                    if (!htmlContent.includes('<meta name="viewport"')) {
+                        if (htmlContent.includes('<head>')) htmlContent = htmlContent.replace('<head>', '<head>\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">');
+                    }
+                }
+
+                if (cssContents.length > 0) {
+                    const styleTag = `<style>\n${cssContents.join('\n')}\n</style>`;
+                    if (htmlContent.includes('</head>')) htmlContent = htmlContent.replace('</head>', `${styleTag}\n</head>`);
+                    else htmlContent = `${styleTag}\n${htmlContent}`;
+                }
+
+                if (jsContents.length > 0) {
+                    const scriptTag = `<script>\n${jsContents.join('\n')}\n<\/script>`;
+                    if (htmlContent.includes('</body>')) htmlContent = htmlContent.replace('</body>', `${scriptTag}\n</body>`);
+                    else htmlContent = `${htmlContent}\n${scriptTag}`;
+                }
+
+                const consoleScript = getConsoleScript();
+                if (htmlContent.includes('<body')) {
+                    htmlContent = htmlContent.replace(/(<body[^>]*>)/i, `$1\n${consoleScript}`);
+                } else {
+                    htmlContent = `${consoleScript}\n${htmlContent}`;
+                }
+
+                // 【新機能】コード内に書かれたアセットファイル名（例：hero.png）を、実際のBlob URLに置換する
+                Object.keys(assetFiles).forEach(assetName => {
+                    const assetUrl = assetFiles[assetName];
+                    // 全テキストに対して単純にファイル名を置換する（強力！）
+                    htmlContent = htmlContent.split(assetName).join(assetUrl);
+                });
+
+                lastCompiledHtml = htmlContent;
+
+                const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                
+                previewPlaceholder.style.display = 'none';
+                previewFrame.src = url;
+            });
+
+            // ==========================================
+            // ダウンロード（保存）処理
+            // ==========================================
+            downloadBtn.addEventListener('click', () => {
+                if (!lastCompiledHtml) { showAlert('まずはコードを実行してください。'); return; }
+                let cleanHtml = lastCompiledHtml.replace(getConsoleScript(), '');
+                const blob = new Blob([cleanHtml], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = 'WebRunnerApp.html';
+                document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+            });
+
+            // ==========================================
+            // その他 UI 操作
+            // ==========================================
+            resetBtn.addEventListener('click', () => {
+                showConfirm('すべてのファイルとプレビュー結果を消去します。よろしいですか？', () => {
+                    fileStore = { 'index.html': { type: 'html', originalExt: 'html', content: '' } };
+                    updateTabs('index.html'); lastCompiledHtml = '';
+                    previewFrame.src = 'about:blank'; previewPlaceholder.style.display = 'flex';
+                });
+            });
+
+            let isFullscreen = false;
+            fullscreenBtn.addEventListener('click', () => {
+                isFullscreen = !isFullscreen;
+                if (isFullscreen) {
+                    previewSection.classList.add('fullscreen-active'); fsText.textContent = '元のサイズに戻す';
+                } else {
+                    previewSection.classList.remove('fullscreen-active'); fsText.textContent = '全画面で表示';
+                }
+            });
+
+            function openModal() { helpModal.classList.add('active'); }
+            function closeModal() { helpModal.classList.remove('active'); }
+            helpBtn.addEventListener('click', openModal); closeIconBtn.addEventListener('click', closeModal); closeBtnBottom.addEventListener('click', closeModal);
+            helpModal.addEventListener('click', (e) => { if (e.target === helpModal) closeModal(); });
+            closeIconBtn.addEventListener('mouseenter', () => closeIconBtn.style.backgroundColor = '#f1f5f9');
+            closeIconBtn.addEventListener('mouseleave', () => closeIconBtn.style.backgroundColor = 'transparent');
+        });
+    </script>
+</body>
+</html>
+
+
+
+
