@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web File Runner Ver.1.4 (Perfect Edition)</title>
+    <title>Web File Runner Ver.1.5</title>
     <style>
         /* =========================================
            基本設定 (Reset & Base) - ダークモード対応
@@ -157,18 +157,18 @@
         .modal-body { padding: 0; overflow-y: auto; color: var(--text-main); font-size: 0.95rem; line-height: 1.7; flex: 1; }
         .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; background-color: var(--panel-header-bg); border-bottom-left-radius: var(--radius-lg); border-bottom-right-radius: var(--radius-lg); flex-shrink: 0; }
         
-        .guide-hero { background: linear-gradient(135deg, var(--primary-color) 0%, #3b82f6 100%); color: white; padding: 32px 24px; text-align: center; }
+        .guide-hero { background: linear-gradient(135deg, var(--primary-color) 0%, #3b82f6 100%); color: white; padding: 32px 24px; text-align: left; }
         .guide-content { padding: 24px; }
         .guide-section { margin-bottom: 32px; }
-        .guide-section h4 { color: var(--primary-color); margin-bottom: 16px; font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; }
+        .guide-section h4 { color: var(--primary-color); margin-bottom: 16px; font-size: 1.15rem; font-weight: bold; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; }
         .guide-card { background-color: var(--panel-header-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px; margin-bottom: 16px; }
         .guide-card h5 { color: var(--text-main); font-size: 1.05rem; margin-bottom: 12px; font-weight: bold; border-left: 4px solid var(--primary-color); padding-left: 8px; }
-        .guide-list { margin-left: 20px; margin-top: 8px; margin-bottom: 8px; }
-        .guide-list li { margin-bottom: 12px; }
+        .guide-list { margin-left: 20px; margin-top: 8px; margin-bottom: 8px; list-style-type: disc; }
+        .guide-list li { margin-bottom: 10px; }
         .code-tag { background-color: var(--border-color); color: var(--text-main); padding: 4px 8px; border-radius: 6px; font-family: monospace; font-size: 0.9em; font-weight: bold; }
         
         .step-box { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 16px; background: var(--bg-panel); padding: 16px; border-radius: 8px; border: 1px dashed var(--border-color); }
-        .step-number { background: var(--primary-color); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
+        .step-number { background: var(--primary-color); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; font-size: 0.9rem; }
 
         @media (max-width: 768px) {
             .controls { flex-direction: column; align-items: stretch; }
@@ -188,7 +188,7 @@
     <header>
         <div class="header-title">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-color)"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
-            <span>Web File Runner <span class="ver-text" style="font-size: 0.8em; color: var(--text-muted); font-weight: normal;">Ver.1.4</span></span>
+            <span>Web File Runner <span class="ver-text" style="font-size: 0.8em; color: var(--text-muted); font-weight: normal;">Ver.1.5</span></span>
         </div>
         <div class="header-actions">
             <button id="theme-btn" class="btn btn-text" title="テーマ切り替え">
@@ -196,7 +196,7 @@
             </button>
             <button id="help-btn" class="btn btn-text">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                <span class="hidden sm:inline">使い方</span>
+                <span class="hidden sm:inline">使い方ガイド</span>
             </button>
             <label class="toggle-switch" title="編集時に自動でプレビューを更新します">
                 <input type="checkbox" id="autorun-toggle">
@@ -232,12 +232,12 @@
             <div class="panel-header" style="text-transform: none;">
                 <div style="display: flex; align-items: center; gap: 6px;">
                     <svg class="icon-sm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M10 13l-2 2 2 2"/><path d="M14 17l2-2-2-2"/></svg>
-                    エディタ (タブ名Wクリックで変更可)
+                    エディタ (タブ名Wクリックでリネーム可能)
                 </div>
             </div>
             <div class="file-tabs-container">
                 <div id="file-tabs" class="file-tabs"></div>
-                <button id="add-file-btn" title="新しいファイルを作る">+</button>
+                <button id="add-file-btn" title="新規ファイル作成">+</button>
             </div>
             <div class="panel-content">
                 <textarea id="editor" placeholder="ここにコードを入力してください。" spellcheck="false"></textarea>
@@ -253,13 +253,13 @@
                     プレビュー
                 </div>
                 <button id="fullscreen-btn" class="btn btn-small">
-                    <span id="fs-text">全画面で表示</span>
+                    <span id="fs-text">全画面表示</span>
                 </button>
             </div>
             <div class="panel-content">
                 <iframe id="preview-frame" sandbox="allow-scripts allow-modals allow-same-origin allow-forms allow-popups" src="about:blank"></iframe>
                 <div id="preview-placeholder" class="preview-placeholder">
-                    <p style="font-weight: 500;">「コードを実行」を押すと結果が表示されます</p>
+                    <p style="font-weight: 500;">「コードを実行」を押すとプレビューがレンダリングされます</p>
                 </div>
             </div>
         </div>
@@ -277,7 +277,7 @@
             <div class="modal-header">
                 <h3>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                    パーフェクト使い方ガイド 📖
+                    Web File Runner ユーザーガイド
                 </h3>
                 <button id="close-icon-btn" style="color: var(--text-muted); border-radius: 50%; padding: 4px; transition: background 0.2s;">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -286,77 +286,74 @@
             
             <div class="modal-body">
                 <div class="guide-hero">
-                    <h4 style="font-size: 1.5rem; margin-bottom: 8px;">Web File Runner って何？🚀</h4>
-                    <p style="line-height: 1.6;">プログラミングで作った「ゲーム」や「Webサイト」のファイルを、<br>インターネット上の特別なサーバーを用意しなくても、<strong style="color: #fbbf24;">ブラウザの中で直接動かせる魔法の実験室</strong>だよ！</p>
+                    <h4 style="font-size: 1.4rem; margin-bottom: 8px;">概要と目的</h4>
+                    <p style="line-height: 1.6;">Web File Runnerは、ローカル環境（PCやスマートフォン内）にあるフロントエンドのソースコードを、Webサーバーを構築することなくブラウザ上で直接実行・プレビューするための統合開発ツールです。</p>
                 </div>
 
                 <div class="guide-content">
                     
                     <div class="guide-section">
-                        <h4>🧩 3つのファイルの役割（Webアプリの仕組み）</h4>
-                        <p style="margin-bottom: 16px;">Webサイトやゲームは、主に**3種類のファイル**が協力して作られています。「家を建てること」に例えて説明するね！</p>
+                        <h4>1. フロントエンドを構成する3つの主要言語</h4>
+                        <p style="margin-bottom: 16px;">Webアプリケーションは基本的に以下の3つの言語が連携して動作します。本ツールはこれらを動的に結合し、1つのプロセスとして実行します。</p>
                         
                         <div class="guide-card">
-                            <h5>📄 1. HTML（エイチティーエムエル）＝「家の骨組み」</h5>
-                            <p>画面に「ボタン」や「文字」をどこに置くかを決める設計図だよ。<br><span style="color: var(--text-muted); font-size: 0.9em;">（よくあるファイル名： <code>index.html</code>, <code>game.html</code>）</span></p>
+                            <h5>HTML (HyperText Markup Language)</h5>
+                            <p>Webページの「構造」を定義するためのマークアップ言語です。テキスト、画像、ボタンなどのUI要素を配置し、アプリケーションのベースとなる設計図として機能します。</p>
                         </div>
                         
                         <div class="guide-card">
-                            <h5>🎨 2. CSS（シーエスエス）＝「ペンキやインテリア」</h5>
-                            <p>ボタンを赤色にしたり、文字を大きくしたり、見た目をオシャレにデザインするためのファイルだよ。<br><span style="color: var(--text-muted); font-size: 0.9em;">（よくあるファイル名： <code>style.css</code>, <code>main.css</code>）</span></p>
+                            <h5>CSS (Cascading Style Sheets)</h5>
+                            <p>HTMLで定義された要素に対して「装飾（スタイル）」を適用します。色彩、余白、レスポンシブデザイン（画面サイズに応じたレイアウト調整）などを制御し、視覚的な完成度を高めます。</p>
                         </div>
 
                         <div class="guide-card">
-                            <h5>⚙️ 3. JavaScript（ジャバスクリプト）＝「電気やモーター」</h5>
-                            <p>「ボタンを押したらジャンプする」「敵が動く」「点数を計算する」といった、裏側の仕組みや"動き"を作るプログラムだよ。<br><span style="color: var(--text-muted); font-size: 0.9em;">（よくあるファイル名： <code>script.js</code>, <code>app.js</code>）</span></p>
+                            <h5>JavaScript (JS)</h5>
+                            <p>アプリケーションに「動作（ロジック）」を実装するためのプログラミング言語です。ユーザーの入力処理、DOM（画面要素）の動的書き換え、物理演算、API通信などの中核的な処理を担います。</p>
                         </div>
                     </div>
 
                     <div class="guide-section">
-                        <h4>🎮 ツールの使い方ステップ</h4>
+                        <h4>2. 基本的なワークフロー（操作手順）</h4>
                         
                         <div class="step-box">
                             <div class="step-number">1</div>
                             <div>
-                                <strong style="display: block; margin-bottom: 4px;">ファイルを開く</strong>
-                                画面左上の「ファイルを開く」ボタンを押して、動かしたいプログラムのファイルを選ぼう。<br>
-                                バラバラになっている HTML、CSS、JavaScript を<strong>まとめて全部いっぺんに選ぶ</strong>のがコツ！ツールが自動で1つに合体させてくれます。
+                                <strong style="display: block; margin-bottom: 4px;">ファイルのアップロード</strong>
+                                左上の「ファイルを開く」からソースコードを選択します。HTML, CSS, JSが別々のファイルに分かれている場合は、<strong>必ず複数ファイルを同時に選択</strong>してください。ツールが依存関係を自動解析して結合します。
                             </div>
                         </div>
 
                         <div class="step-box">
                             <div class="step-number">2</div>
                             <div>
-                                <strong style="display: block; margin-bottom: 4px;">コードをいじる（エディタ）</strong>
-                                読み込んだファイルは左側の「エディタ」に文字として表示されるよ。<br>
-                                数字や色を書き換えて、自分だけのオリジナルゲームに改造してみよう！
+                                <strong style="display: block; margin-bottom: 4px;">エディタでの編集・デバッグ</strong>
+                                左側のパネルにコードが展開されます。上部のタブでファイルを切り替えながら、直接コードを修正することができます。
                             </div>
                         </div>
 
                         <div class="step-box">
                             <div class="step-number">3</div>
                             <div>
-                                <strong style="display: block; margin-bottom: 4px;">コードを実行する</strong>
-                                画面中央の「コードを実行」ボタンを押すと、右側のプレビュー画面にゲームやWebサイトが表示されて実際に遊べるようになるよ！<br>
-                                右上の<strong style="color: var(--primary-color);">「自動実行」</strong>のスイッチをONにすれば、コードを書き換えるたびに勝手に画面が更新されて超便利！
+                                <strong style="display: block; margin-bottom: 4px;">プレビューの実行</strong>
+                                「コードを実行」ボタンを押下すると、右側のパネル（iframeのサンドボックス環境）にレンダリング結果が表示されます。上部の「自動実行」をONにすると、コード編集時にリアルタイムでプレビューが更新されるようになります。
                             </div>
                         </div>
                     </div>
 
                     <div class="guide-section">
-                        <h4>🖼️ 画像や音楽を使いたい時はどうするの？</h4>
-                        <p style="margin-bottom: 12px;">ゲームのキャラクター画像（.png）や、BGM（.mp3）もこのツールで使えます！</p>
+                        <h4>3. アセット（画像・音声ファイル）の組み込み機能</h4>
+                        <p style="margin-bottom: 12px;">ローカルにある画像ファイルや音声ファイルをコード内で使用する場合の手順です。</p>
                         <ul class="guide-list">
-                            <li><strong>ステップ1:</strong> コードのファイルと一緒に、画像や音楽のファイルも「ファイルを開く」で一緒に選んで読み込みます。</li>
-                            <li><strong>ステップ2:</strong> プログラム（HTMLやJSなど）の中に、<span class="code-tag">hero.png</span> のようにファイルの名前をそのまま書きます。</li>
-                            <li><strong>完成！:</strong> 「コードを実行」を押すと、ツールが自動的に画像をコードの中にはめ込んで表示してくれます！</li>
+                            <li>ソースコードと一緒に、対象のアセットファイル（.png, .jpg, .mp3など）を同時にアップロードします。</li>
+                            <li>HTMLやJavaScriptのコード内では、通常の相対パスと同様にファイル名（例: <span class="code-tag">player.png</span>）を直接記述してください。</li>
+                            <li>実行時に、本ツールがバックグラウンドでアセットファイルをData URL（Base64形式）へ自動変換し、パスの置換を行うため、サーバーなしでも正常に読み込まれます。</li>
                         </ul>
                     </div>
 
                 </div>
             </div>
             <div class="modal-footer">
-                <button id="close-btn-bottom" class="btn btn-primary" style="padding: 12px 32px; font-size: 1.1rem;">分かった！ツールを使う👍</button>
+                <button id="close-btn-bottom" class="btn btn-primary" style="padding: 12px 32px; font-size: 1.1rem;">閉じる</button>
             </div>
         </div>
     </div>
@@ -410,7 +407,6 @@
         let fileStore = { 'index.html': { type: 'html', originalExt: 'html', content: '' } };
         let activeFileName = 'index.html';
         let autorunTimer = null;
-        let lastCompiledHtml = '';
 
         const savedFiles = localStorage.getItem('wfr_files');
         const savedActive = localStorage.getItem('wfr_active');
@@ -473,7 +469,7 @@
                 const titleSpan = document.createElement('span');
                 titleSpan.textContent = (fileData && fileData.originalExt === 'txt' && fileData.type !== 'txt') 
                     ? `${name} (判定: ${fileData.type.toUpperCase()})` : name;
-                titleSpan.title = "ダブルクリックで名前を変更";
+                titleSpan.title = "ダブルクリックでリネーム";
                 
                 titleSpan.addEventListener('click', () => updateTabs(name));
                 titleSpan.addEventListener('dblclick', (e) => {
@@ -563,7 +559,7 @@
                     reader.onload = (event) => {
                         fileStore[file.name] = { 
                             type: 'asset', originalExt: originalExt, dataUrl: event.target.result, 
-                            content: `/* アセット: ${file.name} */\n※このファイルは素材データです。` 
+                            content: `/* アセット: ${file.name} */\n※このファイルはバイナリデータです。プレビュー用に自動で展開されます。` 
                         };
                         saveState(); updateTabs(); triggerAutoRun();
                     };
@@ -581,46 +577,12 @@
             fileInput.value = ''; 
         });
 
-        const getConsoleScript = () => `
-        <script>
-        (function(){
-            const oldLog = console.log; const oldError = console.error;
-            let cEl = null; let cBody = null; let msgCount = 0;
-            function initConsole() {
-                if(cEl) return;
-                cEl = document.createElement('div');
-                cEl.style.cssText = 'position:fixed;bottom:0;left:0;width:100%;max-height:150px;background:rgba(15,23,42,0.8);color:#fff;font-family:monospace;font-size:12px;z-index:999999;box-sizing:border-box;border-top:2px solid #6366f1;display:flex;flex-direction:column;pointer-events:none;';
-                const header = document.createElement('div');
-                header.style.cssText = 'padding:4px 10px;background:#1e293b;display:flex;justify-content:space-between;align-items:center;pointer-events:auto;';
-                header.innerHTML = '<span style="font-weight:bold;color:#818cf8;">▶ Log</span>';
-                const closeBtn = document.createElement('button');
-                closeBtn.innerText = '閉じる';
-                closeBtn.style.cssText = 'background:#ef4444;color:white;border:none;padding:2px 8px;border-radius:4px;cursor:pointer;font-size:10px;';
-                closeBtn.onclick = () => { cEl.style.display = 'none'; };
-                header.appendChild(closeBtn);
-                cBody = document.createElement('div');
-                cBody.style.cssText = 'flex:1;overflow-y:auto;padding:8px;pointer-events:auto;';
-                cEl.appendChild(header); cEl.appendChild(cBody);
-                document.body.appendChild(cEl);
-            }
-            function print(args, color) {
-                if(document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', () => print(args, color)); return; }
-                if(!document.body) return;
-                initConsole();
-                cEl.style.display = 'flex';
-                const line = document.createElement('div');
-                line.style.cssText = \`color:\${color};padding:2px 0;word-break:break-all;\`;
-                line.innerText = Array.from(args).map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
-                cBody.appendChild(line);
-                cBody.scrollTop = cBody.scrollHeight;
-                if(++msgCount > 50) cBody.removeChild(cBody.firstChild);
-            }
-            console.log = function(...args) { oldLog.apply(console, args); print(args, '#10b981'); };
-            console.error = function(...args) { oldError.apply(console, args); print(args, '#ef4444'); };
-        })();
-        </scr` + `ipt>`;
+        // ==========================================
+        // 🚀 Ver.1.5 改修: スクリプト統合エンジンの強化
+        // コンソール機能等の不要なDOM介入を排除し、完全な独立環境を構築します。
+        // ==========================================
+        let currentBlobUrl = null;
 
-        // 🌟 どんなプログラムにも対応できる「超合体エンジン」
         runBtn.addEventListener('click', () => {
             const fileNames = Object.keys(fileStore);
             if (fileNames.length === 0) return;
@@ -628,7 +590,6 @@
             let htmlContent = ''; let cssContents = []; let jsContents = [];
             let assetFiles = {};
 
-            // ファイルを種類ごとに分ける
             fileNames.forEach(name => {
                 const file = fileStore[name];
                 if (file.type === 'asset') assetFiles[name] = file.dataUrl;
@@ -637,16 +598,13 @@
                 else if (file.type === 'js') jsContents.push(file.content);
             });
 
-            // HTMLの骨組みがない場合は、スマホ最適化対応の最強の骨組みを自動で作る
             if (!htmlContent) {
                 htmlContent = `<!DOCTYPE html>\n<html lang="ja">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">\n<title>Preview</title>\n</head>\n<body>\n</body>\n</html>`;
             }
 
-            // 【重要改良】全てのコード内（HTML, CSS, JS）のファイル名を画像データに徹底的に置き換える
             const replaceAssets = (text) => {
                 let res = text;
                 Object.keys(assetFiles).forEach(assetName => {
-                    // 単純な replaceAll だと他の文字列まで置換してしまうリスクがあるため、split & join で安全に置換
                     res = res.split(assetName).join(assetFiles[assetName]);
                 });
                 return res;
@@ -656,7 +614,6 @@
             cssContents = cssContents.map(replaceAssets);
             jsContents = jsContents.map(replaceAssets);
 
-            // CSSをはめ込む
             if (cssContents.length > 0) {
                 const styleTag = `<style>\n${cssContents.join('\n')}\n</style>`;
                 if (htmlContent.includes('</head>')) {
@@ -666,9 +623,8 @@
                 }
             }
 
-            // JavaScriptをはめ込む（別々のファイルは、別々の<script>タグにして干渉を防ぐ）
             if (jsContents.length > 0) {
-                const scriptTags = jsContents.map(js => `<script>\n${js}\n<\/scr` + `ipt>`).join('\n');
+                const scriptTags = jsContents.map(js => `<script>\n${js}\n<\/script>`).join('\n');
                 if (htmlContent.includes('</body>')) {
                     htmlContent = htmlContent.replace('</body>', `${scriptTags}\n</body>`);
                 } else {
@@ -676,34 +632,33 @@
                 }
             }
 
-            // コンソール機能を入れる
-            const consoleScript = getConsoleScript();
-            if (htmlContent.includes('<body')) {
-                htmlContent = htmlContent.replace(/(<body[^>]*>)/i, `$1\n${consoleScript}`);
-            } else {
-                htmlContent = `${consoleScript}\n${htmlContent}`;
+            // メモリリーク防止のため、過去のBlob URLを破棄
+            if (currentBlobUrl) {
+                URL.revokeObjectURL(currentBlobUrl);
             }
 
-            lastCompiledHtml = htmlContent;
-
-            // 画面を更新する
+            // Canvasゲーム等の描画において、iframe内で window.innerWidth が正しく評価されるよう
+            // Blob URL によるナビゲーション方式へ変更
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            currentBlobUrl = URL.createObjectURL(blob);
+            
             previewPlaceholder.style.display = 'none';
-            previewFrame.removeAttribute('src'); 
-            previewFrame.srcdoc = htmlContent;
+            previewFrame.src = currentBlobUrl;
         });
 
         resetBtn.addEventListener('click', () => {
             showConfirm('すべてのファイルを消去します。よろしいですか？', () => {
                 fileStore = { 'index.html': { type: 'html', originalExt: 'html', content: '' } };
-                saveState(); updateTabs('index.html'); lastCompiledHtml = '';
-                previewFrame.srcdoc = ''; previewFrame.src = 'about:blank';
+                saveState(); updateTabs('index.html');
+                previewFrame.src = 'about:blank';
                 previewPlaceholder.style.display = 'flex';
+                if (currentBlobUrl) { URL.revokeObjectURL(currentBlobUrl); currentBlobUrl = null; }
             });
         });
 
         fullscreenBtn.addEventListener('click', () => {
             previewSection.classList.toggle('fullscreen-active');
-            fsText.textContent = previewSection.classList.contains('fullscreen-active') ? '元のサイズに戻す' : '全画面で表示';
+            fsText.textContent = previewSection.classList.contains('fullscreen-active') ? '元のサイズに戻す' : '全画面表示';
         });
 
         const resizer = document.getElementById('resizer');
