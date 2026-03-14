@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+　document.addEventListener('DOMContentLoaded', () => {
     // UI要素の取得
     const fileInput = document.getElementById('file-input');
     const runBtn = document.getElementById('run-btn');
@@ -19,6 +19,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const alertModal = document.getElementById('alert-modal');
     const alertMessage = document.getElementById('alert-message');
     const alertFooter = document.getElementById('alert-footer');
+
+    [span_0](start_span)// --- 使い方ガイド復活 [cite: 154-155] ---
+    const helpBtn = document.getElementById('help-btn');
+    const helpModal = document.getElementById('help-modal');
+    const closeIconBtn = document.getElementById('close-icon-btn');
+    const closeBtnBottom = document.getElementById('close-btn-bottom');
 
     function showAlert(message) {
         alertMessage.textContent = message;
@@ -63,10 +69,33 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('wfr_active', activeFileName);
     }
 
-    // --- 自動言語判別機能 ---
+    [cite_start]// --- 自動言語判別機能 (完全復活 [cite: 170-177]) ---
     function getFileType(fileName) {
         const parts = fileName.split('.');
         return parts.length > 1 ? parts.pop().toLowerCase() : 'txt';
+    }
+
+    function guessFileTypeFromContent(content, originalExt) {
+        if (originalExt !== 'txt' || !content.trim()) return originalExt;
+        const text = content.trim();
+        const sample = text.slice(0, 1000).toLowerCase();
+
+        if (sample.includes('<!doctype html') || sample.includes('<html') || sample.includes('<body') || sample.includes('<div') || sample.includes('<script')) return 'html';
+        
+        let scoreJS = 0; let scoreCSS = 0;
+        const jsKw = ['function ', 'const ', 'let ', 'var ', '=>', 'console.log', 'document.', 'window.'];
+        const cssKw = ['margin:', 'padding:', 'background:', 'color:', 'font-', 'display:', 'border:'];
+
+        jsKw.forEach(kw => { if (text.includes(kw)) scoreJS += 2; });
+        cssKw.forEach(kw => { if (text.includes(kw)) scoreCSS += 1; });
+        
+        if ((text.match(/\{[^}]*:[^}]*\}/g) || []).length > 0) scoreCSS += 3;
+        if ((text.match(/\([^)]*\)/g) || []).length > 0) scoreJS += 2;
+        if ((text.match(/=[^;]+;/g) || []).length > 0) scoreJS += 2;
+        
+        if (scoreJS > scoreCSS && scoreJS > 0) return 'js';
+        if (scoreCSS > scoreJS && scoreCSS > 0) return 'css';
+        return 'txt';
     }
 
     // --- エディタ・タブ管理 ---
@@ -90,14 +119,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const tab = document.createElement('div');
             tab.className = `file-tab ${name === activeFileName ? 'active' : ''}`;
             
+            const fileData = fileStore[name];
             const titleSpan = document.createElement('span');
-            titleSpan.textContent = name;
+            // 自動判定した場合はタブに種類を表示（復活機能）
+            titleSpan.textContent = (fileData && fileData.originalExt === 'txt' && fileData.type !== 'txt') 
+                ? `${name} (判定: ${fileData.type.toUpperCase()})` : name;
             titleSpan.title = "ダブルクリックで名前を変更";
             
             // タブ切り替え
             titleSpan.addEventListener('click', () => updateTabs(name));
             
-            // 【新機能】リネーム（ダブルクリック）
+            // リネーム（ダブルクリック）
             titleSpan.addEventListener('dblclick', (e) => {
                 e.stopPropagation();
                 const newName = prompt('新しいファイル名を入力してください:', name);
@@ -154,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 【新機能】エディタでのTabキーインデント対応
+    // エディタでのTabキーインデント対応
     editor.addEventListener('keydown', function(e) {
         if (e.key === 'Tab') {
             e.preventDefault();
@@ -195,7 +227,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const originalExt = getFileType(file.name);
             
             if (file.type.startsWith('image/') || file.type.startsWith('audio/') || file.type.startsWith('video/')) {
-                // 【新機能】DataURLとして読み込み保存可能にする
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     fileStore[file.name] = { 
@@ -207,7 +238,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 reader.readAsDataURL(file);
             } else {
                 const content = await file.text();
-                fileStore[file.name] = { type: (originalExt==='js'||originalExt==='css'||originalExt==='html') ? originalExt : 'txt', originalExt: originalExt, content: content };
+                [cite_start]// 復活機能：中身からファイルタイプを推測[span_0](end_span)
+                fileStore[file.name] = { 
+                    type: guessFileTypeFromContent(content, originalExt), 
+                    originalExt: originalExt, 
+                    content: content 
+                };
                 saveState();
             }
         }
@@ -263,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         fileNames.forEach(name => {
             const file = fileStore[name];
-            if (file.type === 'asset') assetFiles[name] = file.dataUrl; // Blobではなく保存可能なDataURLを使用
+            if (file.type === 'asset') assetFiles[name] = file.dataUrl;
             else if (file.type === 'html' && !htmlContent) htmlContent = file.content;
             else if (file.type === 'css') cssContents.push(file.content);
             else if (file.type === 'js') jsContents.push(file.content);
@@ -287,7 +323,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (htmlContent.includes('<body')) htmlContent = htmlContent.replace(/(<body[^>]*>)/i, `$1\n${consoleScript}`);
         else htmlContent = `${consoleScript}\n${htmlContent}`;
 
-        // 【新機能】アセット名の安全な置換 (replaceAllを使用)
         Object.keys(assetFiles).forEach(assetName => {
             htmlContent = htmlContent.replaceAll(assetName, assetFiles[assetName]);
         });
@@ -325,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fsText.textContent = previewSection.classList.contains('fullscreen-active') ? '元のサイズに戻す' : '全画面で表示';
     });
 
-    // 【新機能】ドラッグで幅を変更 (リサイザー)
+    // ドラッグで幅を変更 (リサイザー)
     const resizer = document.getElementById('resizer');
     const editorPanel = document.getElementById('editor-panel');
     let isResizing = false;
@@ -339,7 +374,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('mousemove', (e) => {
         if (!isResizing) return;
         const containerWidth = document.querySelector('.workspace').clientWidth;
-        // マウス位置のパーセンテージを計算（最低20%, 最大80%に制限）
         let newWidth = (e.clientX / containerWidth) * 100;
         if(newWidth < 20) newWidth = 20;
         if(newWidth > 80) newWidth = 80;
@@ -351,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.style.cursor = '';
     });
 
-    // 【新機能】ダークモード切り替え
+    // ダークモード切り替え
     const themeBtn = document.getElementById('theme-btn');
     const themeIcon = document.getElementById('theme-icon');
     
@@ -360,17 +394,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isDark) {
             document.documentElement.removeAttribute('data-theme');
             localStorage.setItem('wfr_theme', 'light');
-            themeIcon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>'; // 月
+            themeIcon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
         } else {
             document.documentElement.setAttribute('data-theme', 'dark');
             localStorage.setItem('wfr_theme', 'dark');
-            themeIcon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>'; // 太陽
+            themeIcon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
         }
     }
     themeBtn.addEventListener('click', toggleTheme);
-    
-    // 保存されたテーマの読み込み
-    if (localStorage.getItem('wfr_theme') === 'dark') {
-        toggleTheme(); // 初期状態から切り替え
-    }
+    if (localStorage.getItem('wfr_theme') === 'dark') toggleTheme();
+
+    [cite_start]// 使い方ガイドモーダルの制御（完全復活 [cite: 241-244]）
+    function openModal() { helpModal.classList.add('active'); }
+    function closeModal() { helpModal.classList.remove('active'); }
+    helpBtn.addEventListener('click', openModal); 
+    closeIconBtn.addEventListener('click', closeModal); 
+    closeBtnBottom.addEventListener('click', closeModal);
+    helpModal.addEventListener('click', (e) => { if (e.target === helpModal) closeModal(); });
 });
