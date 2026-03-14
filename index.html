@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web File Runner Ver.1.3 (Limitless対応版)</title>
+    <title>Web File Runner Ver.1.4 (Perfect Edition)</title>
     <style>
         /* =========================================
            基本設定 (Reset & Base) - ダークモード対応
@@ -63,7 +63,7 @@
             padding: 12px 16px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-shrink: 0;
         }
         .file-section { display: flex; align-items: center; gap: 12px; flex: 1; }
-        .action-buttons { display: flex; gap: 8px; }
+        .action-buttons { display: flex; gap: 8px; width: auto; }
 
         .workspace { display: flex; flex: 1; padding: 16px; gap: 0; overflow: hidden; }
         
@@ -160,22 +160,21 @@
         .guide-hero { background: linear-gradient(135deg, var(--primary-color) 0%, #3b82f6 100%); color: white; padding: 32px 24px; text-align: center; }
         .guide-content { padding: 24px; }
         .guide-section { margin-bottom: 32px; }
-        .guide-section h4 { color: var(--primary-color); margin-bottom: 16px; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; }
-        .guide-card { background-color: var(--panel-header-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px; }
+        .guide-section h4 { color: var(--primary-color); margin-bottom: 16px; font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; }
+        .guide-card { background-color: var(--panel-header-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px; margin-bottom: 16px; }
+        .guide-card h5 { color: var(--text-main); font-size: 1.05rem; margin-bottom: 12px; font-weight: bold; border-left: 4px solid var(--primary-color); padding-left: 8px; }
         .guide-list { margin-left: 20px; margin-top: 8px; margin-bottom: 8px; }
-        .guide-list li { margin-bottom: 8px; }
-        .code-tag { background-color: var(--border-color); color: var(--text-main); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.85em; }
-        .faq-item { margin-bottom: 16px; border-bottom: 1px dashed var(--border-color); padding-bottom: 16px; }
-        .faq-q { font-weight: bold; color: var(--text-main); margin-bottom: 4px; display: flex; gap: 8px; }
-        .faq-q::before { content: "Q."; color: var(--primary-color); }
-        .faq-a { color: var(--text-muted); display: flex; gap: 8px; }
-        .faq-a::before { content: "A."; color: var(--danger-color); font-weight: bold; }
+        .guide-list li { margin-bottom: 12px; }
+        .code-tag { background-color: var(--border-color); color: var(--text-main); padding: 4px 8px; border-radius: 6px; font-family: monospace; font-size: 0.9em; font-weight: bold; }
+        
+        .step-box { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 16px; background: var(--bg-panel); padding: 16px; border-radius: 8px; border: 1px dashed var(--border-color); }
+        .step-number { background: var(--primary-color); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
 
         @media (max-width: 768px) {
             .controls { flex-direction: column; align-items: stretch; }
             .file-section { flex-direction: column; align-items: flex-start; }
             .action-buttons { width: 100%; display: flex; }
-            #run-btn { flex: 2; } #download-btn { flex: 1; }
+            #run-btn { flex: 1; width: 100%; }
             .workspace { flex-direction: column; overflow-y: auto; gap: 16px; }
             .resizer { display: none; }
             .panel { min-height: 45vh; flex: none !important; width: 100% !important; }
@@ -189,7 +188,7 @@
     <header>
         <div class="header-title">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-color)"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
-            <span>Web File Runner <span class="ver-text" style="font-size: 0.8em; color: var(--text-muted); font-weight: normal;">Ver.1.3</span></span>
+            <span>Web File Runner <span class="ver-text" style="font-size: 0.8em; color: var(--text-muted); font-weight: normal;">Ver.1.4</span></span>
         </div>
         <div class="header-actions">
             <button id="theme-btn" class="btn btn-text" title="テーマ切り替え">
@@ -221,10 +220,6 @@
             <span id="file-status" class="file-status">1個のファイル</span>
         </div>
         <div class="action-buttons">
-            <button id="download-btn" class="btn btn-outline" title="完成したプログラムをHTMLファイルとして保存します">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                <span class="hidden sm:inline">保存</span>
-            </button>
             <button id="run-btn" class="btn btn-primary">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                 コードを実行
@@ -282,7 +277,7 @@
             <div class="modal-header">
                 <h3>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                    パーフェクト使い方ガイド 📖 (Ver.1.3)
+                    パーフェクト使い方ガイド 📖
                 </h3>
                 <button id="close-icon-btn" style="color: var(--text-muted); border-radius: 50%; padding: 4px; transition: background 0.2s;">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -291,17 +286,73 @@
             
             <div class="modal-body">
                 <div class="guide-hero">
-                    <h4>Web File Runner へようこそ！🎉</h4>
-                    <p style="margin-top: 8px; line-height: 1.6;">このツールは、あなたのスマホやPCに入っているプログラムのファイルを、<br>インターネット上のサーバーを使わずに、ブラウザだけで安全に動かせる魔法のツールです✨</p>
+                    <h4 style="font-size: 1.5rem; margin-bottom: 8px;">Web File Runner って何？🚀</h4>
+                    <p style="line-height: 1.6;">プログラミングで作った「ゲーム」や「Webサイト」のファイルを、<br>インターネット上の特別なサーバーを用意しなくても、<strong style="color: #fbbf24;">ブラウザの中で直接動かせる魔法の実験室</strong>だよ！</p>
                 </div>
+
                 <div class="guide-content">
+                    
                     <div class="guide-section">
-                        <h4>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-                            基本の使い方と「魔法の合体機能」🧩
-                        </h4>
-                        <p style="margin-bottom: 12px;">「ファイルを開く」ボタンからファイルを選んで、「コードを実行」を押すだけでOK！<br>さらに、<strong>複数のファイルを同時に選ぶと、ツールがファイルの種類を自動で推理し、一つのWebアプリとして合体させてから動かしてくれます。</strong></p>
+                        <h4>🧩 3つのファイルの役割（Webアプリの仕組み）</h4>
+                        <p style="margin-bottom: 16px;">Webサイトやゲームは、主に**3種類のファイル**が協力して作られています。「家を建てること」に例えて説明するね！</p>
+                        
+                        <div class="guide-card">
+                            <h5>📄 1. HTML（エイチティーエムエル）＝「家の骨組み」</h5>
+                            <p>画面に「ボタン」や「文字」をどこに置くかを決める設計図だよ。<br><span style="color: var(--text-muted); font-size: 0.9em;">（よくあるファイル名： <code>index.html</code>, <code>game.html</code>）</span></p>
+                        </div>
+                        
+                        <div class="guide-card">
+                            <h5>🎨 2. CSS（シーエスエス）＝「ペンキやインテリア」</h5>
+                            <p>ボタンを赤色にしたり、文字を大きくしたり、見た目をオシャレにデザインするためのファイルだよ。<br><span style="color: var(--text-muted); font-size: 0.9em;">（よくあるファイル名： <code>style.css</code>, <code>main.css</code>）</span></p>
+                        </div>
+
+                        <div class="guide-card">
+                            <h5>⚙️ 3. JavaScript（ジャバスクリプト）＝「電気やモーター」</h5>
+                            <p>「ボタンを押したらジャンプする」「敵が動く」「点数を計算する」といった、裏側の仕組みや"動き"を作るプログラムだよ。<br><span style="color: var(--text-muted); font-size: 0.9em;">（よくあるファイル名： <code>script.js</code>, <code>app.js</code>）</span></p>
+                        </div>
                     </div>
+
+                    <div class="guide-section">
+                        <h4>🎮 ツールの使い方ステップ</h4>
+                        
+                        <div class="step-box">
+                            <div class="step-number">1</div>
+                            <div>
+                                <strong style="display: block; margin-bottom: 4px;">ファイルを開く</strong>
+                                画面左上の「ファイルを開く」ボタンを押して、動かしたいプログラムのファイルを選ぼう。<br>
+                                バラバラになっている HTML、CSS、JavaScript を<strong>まとめて全部いっぺんに選ぶ</strong>のがコツ！ツールが自動で1つに合体させてくれます。
+                            </div>
+                        </div>
+
+                        <div class="step-box">
+                            <div class="step-number">2</div>
+                            <div>
+                                <strong style="display: block; margin-bottom: 4px;">コードをいじる（エディタ）</strong>
+                                読み込んだファイルは左側の「エディタ」に文字として表示されるよ。<br>
+                                数字や色を書き換えて、自分だけのオリジナルゲームに改造してみよう！
+                            </div>
+                        </div>
+
+                        <div class="step-box">
+                            <div class="step-number">3</div>
+                            <div>
+                                <strong style="display: block; margin-bottom: 4px;">コードを実行する</strong>
+                                画面中央の「コードを実行」ボタンを押すと、右側のプレビュー画面にゲームやWebサイトが表示されて実際に遊べるようになるよ！<br>
+                                右上の<strong style="color: var(--primary-color);">「自動実行」</strong>のスイッチをONにすれば、コードを書き換えるたびに勝手に画面が更新されて超便利！
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guide-section">
+                        <h4>🖼️ 画像や音楽を使いたい時はどうするの？</h4>
+                        <p style="margin-bottom: 12px;">ゲームのキャラクター画像（.png）や、BGM（.mp3）もこのツールで使えます！</p>
+                        <ul class="guide-list">
+                            <li><strong>ステップ1:</strong> コードのファイルと一緒に、画像や音楽のファイルも「ファイルを開く」で一緒に選んで読み込みます。</li>
+                            <li><strong>ステップ2:</strong> プログラム（HTMLやJSなど）の中に、<span class="code-tag">hero.png</span> のようにファイルの名前をそのまま書きます。</li>
+                            <li><strong>完成！:</strong> 「コードを実行」を押すと、ツールが自動的に画像をコードの中にはめ込んで表示してくれます！</li>
+                        </ul>
+                    </div>
+
                 </div>
             </div>
             <div class="modal-footer">
@@ -314,7 +365,6 @@
     document.addEventListener('DOMContentLoaded', () => {
         const fileInput = document.getElementById('file-input');
         const runBtn = document.getElementById('run-btn');
-        const downloadBtn = document.getElementById('download-btn');
         const resetBtn = document.getElementById('reset-btn');
         const addFileBtn = document.getElementById('add-file-btn');
         const autorunToggle = document.getElementById('autorun-toggle');
@@ -531,7 +581,6 @@
             fileInput.value = ''; 
         });
 
-        // 🌟 改良ポイント2: コンソールの邪魔な挙動を抑え、エスケープをより安全に
         const getConsoleScript = () => `
         <script>
         (function(){
@@ -540,7 +589,6 @@
             function initConsole() {
                 if(cEl) return;
                 cEl = document.createElement('div');
-                // ゲーム操作を邪魔しないよう高さを抑え、背後の操作を貫通させる設計に
                 cEl.style.cssText = 'position:fixed;bottom:0;left:0;width:100%;max-height:150px;background:rgba(15,23,42,0.8);color:#fff;font-family:monospace;font-size:12px;z-index:999999;box-sizing:border-box;border-top:2px solid #6366f1;display:flex;flex-direction:column;pointer-events:none;';
                 const header = document.createElement('div');
                 header.style.cssText = 'padding:4px 10px;background:#1e293b;display:flex;justify-content:space-between;align-items:center;pointer-events:auto;';
@@ -569,11 +617,10 @@
             }
             console.log = function(...args) { oldLog.apply(console, args); print(args, '#10b981'); };
             console.error = function(...args) { oldError.apply(console, args); print(args, '#ef4444'); };
-            // 警告レベルの軽微なエラーで操作不能になるのを防ぐため、意図的にエラーフックを一部緩和
-            // window.addEventListener('error', e => console.error(e.message));
         })();
-        </scr` + `ipt>`; // HTMLパーサーの誤作動を完全に防ぐ書き方
+        </scr` + `ipt>`;
 
+        // 🌟 どんなプログラムにも対応できる「超合体エンジン」
         runBtn.addEventListener('click', () => {
             const fileNames = Object.keys(fileStore);
             if (fileNames.length === 0) return;
@@ -581,6 +628,7 @@
             let htmlContent = ''; let cssContents = []; let jsContents = [];
             let assetFiles = {};
 
+            // ファイルを種類ごとに分ける
             fileNames.forEach(name => {
                 const file = fileStore[name];
                 if (file.type === 'asset') assetFiles[name] = file.dataUrl;
@@ -589,46 +637,59 @@
                 else if (file.type === 'js') jsContents.push(file.content);
             });
 
-            if (!htmlContent) htmlContent = `<!DOCTYPE html>\n<html lang="ja">\n<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>\n<body></body>\n</html>`;
+            // HTMLの骨組みがない場合は、スマホ最適化対応の最強の骨組みを自動で作る
+            if (!htmlContent) {
+                htmlContent = `<!DOCTYPE html>\n<html lang="ja">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">\n<title>Preview</title>\n</head>\n<body>\n</body>\n</html>`;
+            }
 
+            // 【重要改良】全てのコード内（HTML, CSS, JS）のファイル名を画像データに徹底的に置き換える
+            const replaceAssets = (text) => {
+                let res = text;
+                Object.keys(assetFiles).forEach(assetName => {
+                    // 単純な replaceAll だと他の文字列まで置換してしまうリスクがあるため、split & join で安全に置換
+                    res = res.split(assetName).join(assetFiles[assetName]);
+                });
+                return res;
+            };
+
+            htmlContent = replaceAssets(htmlContent);
+            cssContents = cssContents.map(replaceAssets);
+            jsContents = jsContents.map(replaceAssets);
+
+            // CSSをはめ込む
             if (cssContents.length > 0) {
                 const styleTag = `<style>\n${cssContents.join('\n')}\n</style>`;
-                if (htmlContent.includes('</head>')) htmlContent = htmlContent.replace('</head>', `${styleTag}\n</head>`);
-                else htmlContent = `${styleTag}\n${htmlContent}`;
+                if (htmlContent.includes('</head>')) {
+                    htmlContent = htmlContent.replace('</head>', `${styleTag}\n</head>`);
+                } else {
+                    htmlContent = `${styleTag}\n${htmlContent}`;
+                }
             }
 
+            // JavaScriptをはめ込む（別々のファイルは、別々の<script>タグにして干渉を防ぐ）
             if (jsContents.length > 0) {
-                // 🌟 改良ポイント3: スクリプト結合時にも終了タグを安全に分離
-                const scriptTag = "<script>\n" + jsContents.join('\n') + "\n</scr" + "ipt>";
-                if (htmlContent.includes('</body>')) htmlContent = htmlContent.replace('</body>', `${scriptTag}\n</body>`);
-                else htmlContent = `${htmlContent}\n${scriptTag}`;
+                const scriptTags = jsContents.map(js => `<script>\n${js}\n<\/scr` + `ipt>`).join('\n');
+                if (htmlContent.includes('</body>')) {
+                    htmlContent = htmlContent.replace('</body>', `${scriptTags}\n</body>`);
+                } else {
+                    htmlContent = `${htmlContent}\n${scriptTags}`;
+                }
             }
 
+            // コンソール機能を入れる
             const consoleScript = getConsoleScript();
-            if (htmlContent.includes('<body')) htmlContent = htmlContent.replace(/(<body[^>]*>)/i, `$1\n${consoleScript}`);
-            else htmlContent = `${consoleScript}\n${htmlContent}`;
-
-            Object.keys(assetFiles).forEach(assetName => {
-                htmlContent = htmlContent.replaceAll(assetName, assetFiles[assetName]);
-            });
+            if (htmlContent.includes('<body')) {
+                htmlContent = htmlContent.replace(/(<body[^>]*>)/i, `$1\n${consoleScript}`);
+            } else {
+                htmlContent = `${consoleScript}\n${htmlContent}`;
+            }
 
             lastCompiledHtml = htmlContent;
 
-            // 🌟 改良ポイント1: Blob URLから、より安定した srcdoc 方式に変更
-            // CDN（Tailwindなど）がセキュリティ制限に引っかからず、正しく動作するようになります。
+            // 画面を更新する
             previewPlaceholder.style.display = 'none';
-            previewFrame.removeAttribute('src'); // 一度クリア
+            previewFrame.removeAttribute('src'); 
             previewFrame.srcdoc = htmlContent;
-        });
-
-        downloadBtn.addEventListener('click', () => {
-            if (!lastCompiledHtml) { showAlert('まずはコードを実行してください。'); return; }
-            let cleanHtml = lastCompiledHtml.replace(getConsoleScript(), '');
-            const blob = new Blob([cleanHtml], { type: 'text/html;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = 'WebRunnerApp.html';
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
         });
 
         resetBtn.addEventListener('click', () => {
