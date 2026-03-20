@@ -1,770 +1,990 @@
 <!DOCTYPE html>
+
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web File Runner Ver.1.9 (Educational IDE)</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.40.0/min/vs/loader.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <style>
-        /* =========================================
-           基本設定 (Reset & Base) - ダークモード対応
-           ========================================= */
-        :root {
-            --bg-body: #f1f5f9;
-            --bg-panel: #ffffff;
-            --text-main: #334155;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            --primary-color: #4f46e5;
-            --primary-hover: #4338ca;
-            --danger-color: #ef4444;
-            --panel-header-bg: #f8fafc;
-            --tab-bg: #f1f5f9;
-            --tab-hover: #ffffff;
-            --console-bg: #1e293b;
-            --console-text: #f8fafc;
-            --radius-md: 8px;
-            --radius-lg: 12px;
-        }
 
-        [data-theme="dark"] {
-            --bg-body: #0f172a;
-            --bg-panel: #1e293b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --border-color: #334155;
-            --primary-color: #6366f1;
-            --primary-hover: #818cf8;
-            --danger-color: #f87171;
-            --panel-header-bg: #0f172a;
-            --tab-bg: #0f172a;
-            --tab-hover: #1e293b;
-            --console-bg: #0f172a;
-        }
+```
+<!-- ========= PWA / Safari Web App 対応 ========= -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WFR">
+<meta name="application-name" content="Web File Runner">
+<meta name="theme-color" content="#4f46e5" id="theme-color-meta">
+<link rel="apple-touch-icon" id="apple-touch-icon-link">
+<link rel="icon" id="favicon-link" type="image/png">
+<link rel="manifest" id="manifest-link">
+<!-- =============================================== -->
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-body); color: var(--text-main);
-            display: flex; flex-direction: column; height: 100vh; overflow: hidden; line-height: 1.5;
-            transition: background-color 0.3s, color 0.3s;
-        }
-        button { cursor: pointer; font-family: inherit; border: none; background: none; color: inherit; }
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.40.0/min/vs/loader.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-panel: #ffffff;
+        --text-main: #334155;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
+        --primary-color: #4f46e5;
+        --primary-hover: #4338ca;
+        --danger-color: #ef4444;
+        --panel-header-bg: #f8fafc;
+        --tab-bg: #f1f5f9;
+        --tab-hover: #ffffff;
+        --console-bg: #1e293b;
+        --console-text: #f8fafc;
+        --radius-md: 8px;
+        --radius-lg: 12px;
+    }
+    [data-theme="dark"] {
+        --bg-body: #0f172a;
+        --bg-panel: #1e293b;
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --border-color: #334155;
+        --primary-color: #6366f1;
+        --primary-hover: #818cf8;
+        --danger-color: #f87171;
+        --panel-header-bg: #0f172a;
+        --tab-bg: #0f172a;
+        --tab-hover: #1e293b;
+        --console-bg: #0f172a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background-color: var(--bg-body); color: var(--text-main);
+        display: flex; flex-direction: column; height: 100vh; overflow: hidden; line-height: 1.5;
+        transition: background-color 0.3s, color 0.3s;
+    }
+    button { cursor: pointer; font-family: inherit; border: none; background: none; color: inherit; }
+    header {
+        background-color: var(--bg-panel); border-bottom: 1px solid var(--border-color);
+        padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+    }
+    .header-title { display: flex; align-items: center; gap: 8px; font-size: 1.2rem; font-weight: bold; }
+    .header-actions { display: flex; gap: 12px; align-items: center; }
+    .controls {
+        background-color: var(--panel-header-bg); border-bottom: 1px solid var(--border-color);
+        padding: 10px 16px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .file-section { display: flex; align-items: center; gap: 12px; flex: 1; }
+    .action-buttons { display: flex; gap: 8px; }
+    .workspace { display: flex; flex: 1; padding: 12px; gap: 0; overflow: hidden; }
+    .panel {
+        background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+        display: flex; flex-direction: column; flex: 1; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .resizer {
+        width: 16px; cursor: col-resize; display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 10;
+    }
+    .resizer::after {
+        content: ""; width: 4px; height: 30px; background-color: var(--border-color); border-radius: 2px; transition: 0.2s;
+    }
+    .resizer:hover::after, .resizer.active::after { background-color: var(--primary-color); }
+    .panel-header {
+        background-color: var(--panel-header-bg); border-bottom: 1px solid var(--border-color); padding: 6px 16px;
+        display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: bold; color: var(--text-muted);
+    }
+    .panel-content { flex: 1; position: relative; display: flex; flex-direction: column; overflow: hidden; }
+    .right-pane {
+        display: flex; flex-direction: column; flex: 1; border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden;
+    }
+    .preview-wrapper { display: flex; flex-direction: column; flex: 2; min-height: 200px; background-color: var(--bg-panel); transition: flex 0.2s; }
+    .console-resizer { height: 12px; cursor: row-resize; background-color: var(--panel-header-bg); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); display: flex; justify-content: center; align-items: center; transition: background-color 0.2s; }
+    .console-resizer::after { content: ""; width: 30px; height: 4px; background-color: var(--border-color); border-radius: 2px; }
+    .console-resizer:hover { background-color: var(--border-color); }
+    .console-resizer.hidden { display: none; }
+    .console-wrapper { display: flex; flex-direction: column; flex: 1; min-height: 100px; background-color: var(--console-bg); transition: flex 0.2s, min-height 0.2s; }
+    .console-wrapper.collapsed { flex: 0 0 34px !important; min-height: 34px !important; }
+    .console-wrapper.collapsed #console-output { display: none; }
+    .file-tabs-container { display: flex; background-color: var(--panel-header-bg); border-bottom: 1px solid var(--border-color); align-items: center; }
+    .file-tabs { display: flex; overflow-x: auto; scrollbar-width: none; flex: 1; }
+    .file-tabs::-webkit-scrollbar { display: none; }
+    .file-tab {
+        padding: 8px 16px; font-size: 0.85rem; color: var(--text-muted); border-right: 1px solid var(--border-color);
+        border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 8px; background-color: var(--tab-bg); user-select: none;
+    }
+    .file-tab-title { max-width: 150px; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: middle; }
+    .file-tab:hover { background-color: var(--tab-hover); }
+    .file-tab.active { background-color: var(--bg-panel); color: var(--primary-color); border-bottom-color: var(--primary-color); font-weight: bold; }
+    .file-tab-delete { color: var(--text-muted); cursor: pointer; border-radius: 50%; display: flex; align-items: center; justify-content: center; width: 18px; height: 18px; transition: 0.2s; }
+    .file-tab-delete:hover { background-color: var(--border-color); color: var(--danger-color); }
+    #add-file-btn { padding: 0 16px; font-size: 1.2rem; font-weight: bold; color: var(--primary-color); cursor: pointer; transition: 0.2s; background: transparent; border: none; height: 100%; display: flex; align-items: center; }
+    #add-file-btn:hover { background-color: var(--border-color); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 14px; border-radius: var(--radius-md); font-size: 0.85rem; font-weight: 600; transition: all 0.2s; }
+    .btn-primary { background-color: var(--primary-color); color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .btn-primary:hover { background-color: var(--primary-hover); }
+    .btn-outline { background-color: var(--bg-panel); border: 1px solid var(--border-color); color: var(--text-main); }
+    .btn-outline:hover { background-color: var(--panel-header-bg); }
+    .btn-text { color: var(--text-muted); padding: 4px 10px; }
+    .btn-text:hover { background-color: var(--panel-header-bg); color: var(--text-main); }
+    .btn-text.danger:hover { background-color: rgba(239, 68, 68, 0.1); color: var(--danger-color); }
+    .btn-small { padding: 4px 10px; font-size: 0.8rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-panel); font-weight: bold; }
+    .btn-small:hover { border-color: var(--primary-color); color: var(--primary-color); }
+    .btn-action-group { display: flex; gap: 6px; }
+    .file-label { cursor: pointer; } #file-input { display: none; }
+    .file-status { font-size: 0.875rem; color: var(--text-muted); font-weight: 500; }
+    #editor-container { width: 100%; height: 100%; background-color: transparent; }
+    .loading-editor { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary-color); background: var(--bg-panel); z-index: 5; }
+    #preview-frame { width: 100%; height: 100%; border: none; background-color: #ffffff; display: block; }
+    #console-output { flex: 1; overflow-y: auto; padding: 8px 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.8rem; color: var(--console-text); line-height: 1.5; }
+    .log-entry { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); word-wrap: break-word; }
+    .log-error { color: #f87171; background-color: rgba(248, 113, 113, 0.1); padding-left: 4px; border-left: 2px solid #f87171; }
+    .log-warn { color: #fbbf24; background-color: rgba(251, 191, 36, 0.1); padding-left: 4px; border-left: 2px solid #fbbf24; }
+    .log-info { color: #34d399; }
+    svg { width: 1.2em; height: 1.2em; } .icon-sm { width: 1em; height: 1em; }
+    .toggle-switch { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.85rem; font-weight: bold; color: var(--text-muted); }
+    .toggle-switch input { display: none; }
+    .toggle-track { width: 32px; height: 18px; background-color: var(--border-color); border-radius: 9px; position: relative; transition: 0.3s; }
+    .toggle-thumb { width: 14px; height: 14px; background-color: white; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.3s; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+    .toggle-switch input:checked + .toggle-track { background-color: var(--primary-color); }
+    .toggle-switch input:checked + .toggle-track .toggle-thumb { transform: translateX(14px); }
+    .fullscreen-active { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999 !important; border-radius: 0 !important; border: none !important; margin: 0 !important; }
 
-        header {
-            background-color: var(--bg-panel); border-bottom: 1px solid var(--border-color);
-            padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
-        }
-        .header-title { display: flex; align-items: center; gap: 8px; font-size: 1.2rem; font-weight: bold; }
-        .header-actions { display: flex; gap: 12px; align-items: center; }
+    /* ========= ペーストモーダル ========= */
+    .paste-modal-overlay {
+        position: fixed; inset: 0; background: rgba(15, 23, 42, 0.82);
+        backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center;
+        z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s; padding: 16px;
+    }
+    .paste-modal-overlay.active { opacity: 1; pointer-events: auto; }
+    .paste-modal-box {
+        background: var(--bg-panel); border-radius: var(--radius-lg); padding: 28px;
+        width: min(520px, 92vw); box-shadow: 0 25px 50px rgba(0,0,0,0.45);
+        display: flex; flex-direction: column; gap: 16px;
+        transform: scale(0.95); transition: transform 0.25s cubic-bezier(0.16,1,0.3,1);
+    }
+    .paste-modal-overlay.active .paste-modal-box { transform: scale(1); }
+    .paste-modal-header { display: flex; align-items: center; justify-content: space-between; }
+    .paste-modal-header h4 { font-size: 1.1rem; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+    .paste-shortcut-badge {
+        display: inline-flex; align-items: center; gap: 4px;
+        background: var(--panel-header-bg); border: 1px solid var(--border-color);
+        border-radius: 6px; padding: 2px 8px; font-family: ui-monospace, monospace; font-size: 0.85rem;
+        color: var(--primary-color); font-weight: bold;
+    }
+    .paste-modal-hint { font-size: 0.875rem; color: var(--text-muted); line-height: 1.6; }
+    .paste-modal-hint strong { color: var(--text-main); }
+    .paste-modal-textarea {
+        width: 100%; height: 180px; resize: vertical;
+        background: var(--panel-header-bg); border: 2px solid var(--border-color);
+        border-radius: var(--radius-md); padding: 12px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.85rem; color: var(--text-main); outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        line-height: 1.5;
+    }
+    .paste-modal-textarea:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
+    .paste-modal-textarea.has-content { border-color: #10b981; }
+    .paste-status {
+        font-size: 0.8rem; font-weight: bold; display: flex; align-items: center; gap: 6px;
+        min-height: 20px; transition: color 0.2s;
+    }
+    .paste-status.ready { color: #10b981; }
+    .paste-status.empty { color: var(--text-muted); }
+    .paste-modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
 
-        .controls {
-            background-color: var(--panel-header-bg); border-bottom: 1px solid var(--border-color);
-            padding: 10px 16px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-shrink: 0;
-        }
-        .file-section { display: flex; align-items: center; gap: 12px; flex: 1; }
-        .action-buttons { display: flex; gap: 8px; }
+    /* ========= 学習ガイドモーダル ========= */
+    .modal-overlay { position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.25s; padding: 16px; }
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+    .modal-content { background-color: var(--bg-panel); border-radius: var(--radius-lg); width: 100%; max-width: 900px; height: 85vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4); transform: translateY(20px); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    .modal-overlay.active .modal-content { transform: translateY(0); }
+    .modal-header { padding: 16px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background-color: var(--panel-header-bg); border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+    .modal-header h3 { font-size: 1.25rem; color: var(--text-main); display: flex; align-items: center; gap: 8px; font-weight: bold; }
+    .modal-body { padding: 0; overflow-y: auto; color: var(--text-main); font-size: 0.95rem; line-height: 1.7; flex: 1; }
+    .guide-hero { background: linear-gradient(135deg, var(--primary-color) 0%, #2563eb 100%); color: white; padding: 32px 24px; text-align: center; }
+    .guide-hero h4 { font-size: 1.6rem; margin-bottom: 12px; font-weight: bold; letter-spacing: 0.05em; }
+    .guide-content { padding: 32px 24px; }
+    .edu-section { margin-bottom: 40px; }
+    .edu-section-title { color: var(--primary-color); font-size: 1.3rem; font-weight: bold; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; border-bottom: 3px solid var(--border-color); padding-bottom: 8px; }
+    .edu-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 24px; }
+    .edu-card { background: var(--panel-header-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px; transition: transform 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .edu-card:hover { transform: translateY(-2px); border-color: var(--primary-color); }
+    .edu-card h5 { font-size: 1.1rem; font-weight: bold; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .edu-card p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0; }
+    .deep-dive-box { background: rgba(79, 70, 229, 0.05); border-left: 4px solid var(--primary-color); padding: 16px 20px; border-radius: 0 var(--radius-md) var(--radius-md) 0; margin-top: 16px; }
+    .deep-dive-box h6 { font-size: 1rem; color: var(--primary-color); margin-bottom: 8px; font-weight: bold; }
+    .deep-dive-box p { font-size: 0.9rem; color: var(--text-main); margin-bottom: 0; }
+    .code-tag { background-color: var(--border-color); color: var(--text-main); padding: 2px 6px; border-radius: 4px; font-family: ui-monospace, monospace; font-size: 0.9em; }
 
-        .workspace { display: flex; flex: 1; padding: 12px; gap: 0; overflow: hidden; }
-        
-        .panel {
-            background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: var(--radius-lg);
-            display: flex; flex-direction: column; flex: 1; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        
-        .resizer {
-            width: 16px; cursor: col-resize; display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 10;
-        }
-        .resizer::after {
-            content: ""; width: 4px; height: 30px; background-color: var(--border-color); border-radius: 2px; transition: 0.2s;
-        }
-        .resizer:hover::after, .resizer.active::after { background-color: var(--primary-color); }
+    @media (max-width: 768px) {
+        .workspace { flex-direction: column; overflow-y: auto; gap: 12px; }
+        .resizer { display: none; }
+        .panel { min-height: 40vh; flex: none !important; width: 100% !important; }
+        .header-title span.ver-text { display: none; }
+        .btn-action-group span { display: none; }
+    }
+</style>
+```
 
-        .panel-header {
-            background-color: var(--panel-header-bg); border-bottom: 1px solid var(--border-color); padding: 6px 16px;
-            display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: bold; color: var(--text-muted);
-        }
-        .panel-content { flex: 1; position: relative; display: flex; flex-direction: column; overflow: hidden; }
-
-        .right-pane {
-            display: flex; flex-direction: column; flex: 1; border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden;
-        }
-        .preview-wrapper { display: flex; flex-direction: column; flex: 2; min-height: 200px; background-color: var(--bg-panel); transition: flex 0.2s; }
-        .console-resizer { height: 12px; cursor: row-resize; background-color: var(--panel-header-bg); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); display: flex; justify-content: center; align-items: center; transition: background-color 0.2s; }
-        .console-resizer::after { content: ""; width: 30px; height: 4px; background-color: var(--border-color); border-radius: 2px; }
-        .console-resizer:hover { background-color: var(--border-color); }
-        .console-resizer.hidden { display: none; }
-        
-        .console-wrapper { display: flex; flex-direction: column; flex: 1; min-height: 100px; background-color: var(--console-bg); transition: flex 0.2s, min-height 0.2s; }
-        .console-wrapper.collapsed { flex: 0 0 34px !important; min-height: 34px !important; }
-        .console-wrapper.collapsed #console-output { display: none; }
-
-        .file-tabs-container { display: flex; background-color: var(--panel-header-bg); border-bottom: 1px solid var(--border-color); align-items: center; }
-        .file-tabs { display: flex; overflow-x: auto; scrollbar-width: none; flex: 1; }
-        .file-tabs::-webkit-scrollbar { display: none; }
-        .file-tab {
-            padding: 8px 16px; font-size: 0.85rem; color: var(--text-muted); border-right: 1px solid var(--border-color);
-            border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 8px; background-color: var(--tab-bg); user-select: none;
-        }
-        .file-tab-title { max-width: 150px; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: middle; }
-        .file-tab:hover { background-color: var(--tab-hover); }
-        .file-tab.active { background-color: var(--bg-panel); color: var(--primary-color); border-bottom-color: var(--primary-color); font-weight: bold; }
-        .file-tab-delete { color: var(--text-muted); cursor: pointer; border-radius: 50%; display: flex; align-items: center; justify-content: center; width: 18px; height: 18px; transition: 0.2s; }
-        .file-tab-delete:hover { background-color: var(--border-color); color: var(--danger-color); }
-        
-        #add-file-btn { padding: 0 16px; font-size: 1.2rem; font-weight: bold; color: var(--primary-color); cursor: pointer; transition: 0.2s; background: transparent; border: none; height: 100%; display: flex; align-items: center; }
-        #add-file-btn:hover { background-color: var(--border-color); }
-
-        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 14px; border-radius: var(--radius-md); font-size: 0.85rem; font-weight: 600; transition: all 0.2s; }
-        .btn-primary { background-color: var(--primary-color); color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .btn-primary:hover { background-color: var(--primary-hover); }
-        .btn-outline { background-color: var(--bg-panel); border: 1px solid var(--border-color); color: var(--text-main); }
-        .btn-outline:hover { background-color: var(--panel-header-bg); }
-        .btn-text { color: var(--text-muted); padding: 4px 10px; }
-        .btn-text:hover { background-color: var(--panel-header-bg); color: var(--text-main); }
-        .btn-text.danger:hover { background-color: rgba(239, 68, 68, 0.1); color: var(--danger-color); }
-        .btn-small { padding: 4px 10px; font-size: 0.8rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-panel); font-weight: bold; }
-        .btn-small:hover { border-color: var(--primary-color); color: var(--primary-color); }
-        .btn-action-group { display: flex; gap: 6px; }
-
-        .file-label { cursor: pointer; } #file-input { display: none; }
-        .file-status { font-size: 0.875rem; color: var(--text-muted); font-weight: 500; }
-
-        #editor-container { width: 100%; height: 100%; background-color: transparent; }
-        .loading-editor { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary-color); background: var(--bg-panel); z-index: 5; }
-
-        #preview-frame { width: 100%; height: 100%; border: none; background-color: #ffffff; display: block; }
-        
-        #console-output { flex: 1; overflow-y: auto; padding: 8px 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.8rem; color: var(--console-text); line-height: 1.5; }
-        .log-entry { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); word-wrap: break-word; }
-        .log-error { color: #f87171; background-color: rgba(248, 113, 113, 0.1); padding-left: 4px; border-left: 2px solid #f87171; }
-        .log-warn { color: #fbbf24; background-color: rgba(251, 191, 36, 0.1); padding-left: 4px; border-left: 2px solid #fbbf24; }
-        .log-info { color: #34d399; }
-
-        svg { width: 1.2em; height: 1.2em; } .icon-sm { width: 1em; height: 1em; }
-
-        .toggle-switch { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.85rem; font-weight: bold; color: var(--text-muted); }
-        .toggle-switch input { display: none; }
-        .toggle-track { width: 32px; height: 18px; background-color: var(--border-color); border-radius: 9px; position: relative; transition: 0.3s; }
-        .toggle-thumb { width: 14px; height: 14px; background-color: white; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.3s; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
-        .toggle-switch input:checked + .toggle-track { background-color: var(--primary-color); }
-        .toggle-switch input:checked + .toggle-track .toggle-thumb { transform: translateX(14px); }
-
-        .fullscreen-active { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999 !important; border-radius: 0 !important; border: none !important; margin: 0 !important; }
-
-        /* 学習用使い方ガイド CSS */
-        .modal-overlay { position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.25s; padding: 16px; }
-        .modal-overlay.active { opacity: 1; pointer-events: auto; }
-        .modal-content { background-color: var(--bg-panel); border-radius: var(--radius-lg); width: 100%; max-width: 900px; height: 85vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4); transform: translateY(20px); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-        .modal-overlay.active .modal-content { transform: translateY(0); }
-        .modal-header { padding: 16px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background-color: var(--panel-header-bg); border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
-        .modal-header h3 { font-size: 1.25rem; color: var(--text-main); display: flex; align-items: center; gap: 8px; font-weight: bold; }
-        .modal-body { padding: 0; overflow-y: auto; color: var(--text-main); font-size: 0.95rem; line-height: 1.7; flex: 1; }
-        
-        .guide-hero { background: linear-gradient(135deg, var(--primary-color) 0%, #2563eb 100%); color: white; padding: 32px 24px; text-align: center; }
-        .guide-hero h4 { font-size: 1.6rem; margin-bottom: 12px; font-weight: bold; letter-spacing: 0.05em; }
-        .guide-content { padding: 32px 24px; }
-        
-        .edu-section { margin-bottom: 40px; }
-        .edu-section-title { color: var(--primary-color); font-size: 1.3rem; font-weight: bold; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; border-bottom: 3px solid var(--border-color); padding-bottom: 8px; }
-        .edu-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 24px; }
-        .edu-card { background: var(--panel-header-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px; transition: transform 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .edu-card:hover { transform: translateY(-2px); border-color: var(--primary-color); }
-        .edu-card h5 { font-size: 1.1rem; font-weight: bold; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-        .edu-card p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0; }
-        
-        .deep-dive-box { background: rgba(79, 70, 229, 0.05); border-left: 4px solid var(--primary-color); padding: 16px 20px; border-radius: 0 var(--radius-md) var(--radius-md) 0; margin-top: 16px; }
-        .deep-dive-box h6 { font-size: 1rem; color: var(--primary-color); margin-bottom: 8px; font-weight: bold; }
-        .deep-dive-box p { font-size: 0.9rem; color: var(--text-main); margin-bottom: 0; }
-        
-        .code-tag { background-color: var(--border-color); color: var(--text-main); padding: 2px 6px; border-radius: 4px; font-family: ui-monospace, monospace; font-size: 0.9em; }
-
-        @media (max-width: 768px) {
-            .workspace { flex-direction: column; overflow-y: auto; gap: 12px; }
-            .resizer { display: none; }
-            .panel { min-height: 40vh; flex: none !important; width: 100% !important; }
-            .header-title span.ver-text { display: none; }
-            .btn-action-group span { display: none; }
-        }
-    </style>
 </head>
 <body>
 
-    <header>
-        <div class="header-title">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-color)"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
-            <span>Web File Runner <span class="ver-text" style="font-size: 0.8em; color: var(--text-muted); font-weight: normal;">Ver.1.9</span></span>
-        </div>
-        <div class="header-actions">
-            <button id="theme-btn" class="btn btn-text" title="テーマ切替">
-                <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-            </button>
-            <button id="help-btn" class="btn btn-text">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                <span class="hidden sm:inline">使い方＆学習ガイド</span>
-            </button>
-            <label class="toggle-switch" title="編集時に自動でプレビューを更新します">
-                <input type="checkbox" id="autorun-toggle">
-                <div class="toggle-track"><div class="toggle-thumb"></div></div>
-                <span class="hidden sm:inline">自動実行</span>
-            </label>
-            <button id="reset-btn" class="btn btn-text danger">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                <span class="hidden sm:inline">リセット</span>
-            </button>
-        </div>
-    </header>
+```
+<header>
+    <div class="header-title">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-color)"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
+        <span>Web File Runner <span class="ver-text" style="font-size: 0.8em; color: var(--text-muted); font-weight: normal;">Ver.1.9</span></span>
+    </div>
+    <div class="header-actions">
+        <button id="theme-btn" class="btn btn-text" title="テーマ切替">
+            <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <button id="help-btn" class="btn btn-text">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span class="hidden sm:inline">使い方＆学習ガイド</span>
+        </button>
+        <label class="toggle-switch" title="編集時に自動でプレビューを更新します">
+            <input type="checkbox" id="autorun-toggle">
+            <div class="toggle-track"><div class="toggle-thumb"></div></div>
+            <span class="hidden sm:inline">自動実行</span>
+        </label>
+        <button id="reset-btn" class="btn btn-text danger">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            <span class="hidden sm:inline">リセット</span>
+        </button>
+    </div>
+</header>
 
-    <div class="controls">
-        <div class="file-section">
-            <label class="btn btn-outline file-label">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-                ファイルを開く
-                <input type="file" id="file-input" accept=".html,.js,.css,.txt,.zip,image/*,audio/*,video/*" multiple>
-            </label>
-            <span id="file-status" class="file-status">ファイルなし</span>
+<div class="controls">
+    <div class="file-section">
+        <label class="btn btn-outline file-label">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+            ファイルを開く
+            <input type="file" id="file-input" accept=".html,.js,.css,.txt,.zip,image/*,audio/*,video/*" multiple>
+        </label>
+        <span id="file-status" class="file-status">ファイルなし</span>
+    </div>
+    <div class="action-buttons">
+        <button id="run-btn" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            コードを実行
+        </button>
+    </div>
+</div>
+
+<div class="workspace">
+    <div class="panel" id="editor-panel">
+        <div class="panel-header">
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <svg class="icon-sm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                エディタ
+            </div>
+            <div class="btn-action-group">
+                <button id="copy-btn" class="btn btn-small" title="選択中のコードをコピー（選択なしは全体）">📋 <span>コピー</span></button>
+                <button id="paste-btn" class="btn btn-small" title="クリップボードから貼り付け">📝 <span>ペースト</span></button>
+            </div>
         </div>
-        <div class="action-buttons">
-            <button id="run-btn" class="btn btn-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                コードを実行
-            </button>
+        <div class="file-tabs-container">
+            <div id="file-tabs" class="file-tabs"></div>
+            <button id="add-file-btn" title="新規ファイル作成">+</button>
+        </div>
+        <div class="panel-content">
+            <div id="loading-msg" class="loading-editor">エディタを準備中...</div>
+            <div id="editor-container"></div>
         </div>
     </div>
 
-    <div class="workspace">
-        <div class="panel" id="editor-panel">
-            <div class="panel-header">
+    <div class="resizer" id="resizer"></div>
+
+    <div class="right-pane" id="preview-section">
+        <div class="preview-wrapper" id="preview-wrapper">
+            <div class="panel-header" style="border-radius: 0;">
                 <div style="display: flex; align-items: center; gap: 6px;">
-                    <svg class="icon-sm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    エディタ
+                    <svg class="icon-sm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    プレビュー
                 </div>
-                <div class="btn-action-group">
-                    <button id="copy-btn" class="btn btn-small" title="コード全体をコピー">📋 <span>コピー</span></button>
-                    <button id="paste-btn" class="btn btn-small" title="クリップボードから貼り付け">📝 <span>ペースト</span></button>
-                </div>
+                <button id="fullscreen-btn" class="btn btn-small">全画面</button>
             </div>
-            <div class="file-tabs-container">
-                <div id="file-tabs" class="file-tabs"></div>
-                <button id="add-file-btn" title="新規ファイル作成">+</button>
-            </div>
-            <div class="panel-content">
-                <div id="loading-msg" class="loading-editor">エディタを準備中...</div>
-                <div id="editor-container"></div>
+            <div class="panel-content" style="background: #fff;">
+                <iframe id="preview-frame" sandbox="allow-scripts allow-modals allow-same-origin allow-forms allow-popups" src="about:blank"></iframe>
             </div>
         </div>
 
-        <div class="resizer" id="resizer"></div>
+        <div class="console-resizer" id="console-resizer"></div>
 
-        <div class="right-pane" id="preview-section">
-            <div class="preview-wrapper" id="preview-wrapper">
-                <div class="panel-header" style="border-radius: 0;">
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <svg class="icon-sm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                        プレビュー
-                    </div>
-                    <button id="fullscreen-btn" class="btn btn-small">全画面</button>
+        <div class="console-wrapper" id="console-wrapper">
+            <div class="panel-header" style="background: transparent; color: var(--console-text); border-top: none; cursor: pointer;" id="console-header">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <button id="toggle-console-btn" style="color: inherit; border: none; background: none; display: flex; align-items: center; justify-content: center; width: 20px;">▼</button>
+                    <svg class="icon-sm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                    セーフティ・コンソール
                 </div>
-                <div class="panel-content" style="background: #fff;">
-                    <iframe id="preview-frame" sandbox="allow-scripts allow-modals allow-same-origin allow-forms allow-popups" src="about:blank"></iframe>
-                </div>
+                <button id="clear-console-btn" class="btn btn-small" style="background: rgba(255,255,255,0.1); color: inherit; border-color: rgba(255,255,255,0.2);">クリア</button>
             </div>
-
-            <div class="console-resizer" id="console-resizer"></div>
-            
-            <div class="console-wrapper" id="console-wrapper">
-                <div class="panel-header" style="background: transparent; color: var(--console-text); border-top: none; cursor: pointer;" id="console-header">
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <button id="toggle-console-btn" style="color: inherit; border: none; background: none; display: flex; align-items: center; justify-content: center; width: 20px;">▼</button>
-                        <svg class="icon-sm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-                        セーフティ・コンソール
-                    </div>
-                    <button id="clear-console-btn" class="btn btn-small" style="background: rgba(255,255,255,0.1); color: inherit; border-color: rgba(255,255,255,0.2);">クリア</button>
-                </div>
-                <div id="console-output">
-                    <div class="log-entry" style="color: var(--text-muted);">実行待機中... エラーやログがここに表示されます。</div>
-                </div>
+            <div id="console-output">
+                <div class="log-entry" style="color: var(--text-muted);">実行待機中... エラーやログがここに表示されます。</div>
             </div>
         </div>
     </div>
+</div>
 
-    <div id="help-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                    Web開発の裏側がわかる！学習ガイド 📖
-                </h3>
-                <button id="close-icon-btn" style="color: var(--text-muted); border-radius: 50%; padding: 4px; transition: background 0.2s;">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
+<!-- ペーストモーダル -->
+<div id="paste-modal" class="paste-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="paste-modal-title">
+    <div class="paste-modal-box">
+        <div class="paste-modal-header">
+            <h4 id="paste-modal-title">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                コードをペースト
+            </h4>
+            <button id="paste-modal-close" class="btn btn-text" aria-label="閉じる" style="border-radius: 50%; padding: 6px;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <p class="paste-modal-hint">
+            下のテキストエリアに <strong>カーソルが当たっている状態</strong> で
+            <span class="paste-shortcut-badge" id="paste-shortcut-key">Ctrl+V</span>
+            を押してください。ChatGPT 等のコードをそのままペーストできます。
+        </p>
+        <textarea
+            id="paste-textarea"
+            class="paste-modal-textarea"
+            placeholder="ここにコードをペーストしてください..."
+            spellcheck="false"
+            autocomplete="off"
+        ></textarea>
+        <div class="paste-status empty" id="paste-status">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0"><circle cx="8" cy="8" r="6"/><line x1="8" y1="5" x2="8" y2="8"/><line x1="8" y1="11" x2="8.01" y2="11"/></svg>
+            <span id="paste-status-text">まだ入力がありません</span>
+        </div>
+        <div class="paste-modal-actions">
+            <button id="paste-modal-cancel" class="btn btn-outline">キャンセル</button>
+            <button id="paste-modal-confirm" class="btn btn-primary" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                エディタに挿入
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 学習ガイドモーダル -->
+<div id="help-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                Web開発の裏側がわかる！学習ガイド 📖
+            </h3>
+            <button id="close-icon-btn" style="color: var(--text-muted); border-radius: 50%; padding: 4px; transition: background 0.2s;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="guide-hero">
+                <h4>ブラウザは「魔法のキャンバス」</h4>
+                <p style="font-size: 1.05rem; opacity: 0.9;">このツールは、プログラミングで作られたゲームやサイトを、<br>サーバーを使わずにあなたのブラウザの中で直接組み立てて動かす「統合開発環境(IDE)」です。</p>
             </div>
-            
-            <div class="modal-body">
-                <div class="guide-hero">
-                    <h4>ブラウザは「魔法のキャンバス」</h4>
-                    <p style="font-size: 1.05rem; opacity: 0.9;">このツールは、プログラミングで作られたゲームやサイトを、<br>サーバーを使わずにあなたのブラウザの中で直接組み立てて動かす「統合開発環境(IDE)」です。</p>
-                </div>
-
-                <div class="guide-content">
-                    
-                    <div class="edu-section">
-                        <h4 class="edu-section-title">1. Webを構成する「3つの言語」の本当の姿</h4>
-                        <p style="margin-bottom: 16px;">Webアプリは「家づくり」に例えられますが、コンピュータの内部ではもう少し複雑な連携が行われています。</p>
-                        
-                        <div class="edu-card-grid">
-                            <div class="edu-card">
-                                <h5>📄 HTML (構造とツリー)</h5>
-                                <p>画面にボタンや文字を配置する設計図です。ブラウザはこれを読み込むと、<strong>DOM（Document Object Model）</strong>というツリー状のデータ構造をメモリ上に構築します。これにより、プログラムから各部品を操作できるようになります。</p>
-                            </div>
-                            
-                            <div class="edu-card">
-                                <h5>🎨 CSS (装飾とボックス)</h5>
-                                <p>HTMLの各要素にデザインを適用します。CSSの世界では、全ての要素が四角い箱として扱われます（<strong>ボックスモデル</strong>）。余白（Margin）や枠線（Border）をピクセル単位で計算し、美しいレイアウトを作ります。</p>
-                            </div>
-
-                            <div class="edu-card">
-                                <h5>⚙️ JavaScript (動的ロジック)</h5>
-                                <p>ゲームの動きや計算を担当する「頭脳」です。「クリックされた」などの<strong>イベント（出来事）</strong>を監視し、イベントが起きるたびにDOMを書き換えたり、CSSのスタイルを操作したりすることで、画面に動きを生み出します。</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="edu-section">
-                        <h4 class="edu-section-title">2. なぜ「サーバーなし」で画像や音楽が動くのか？</h4>
-                        <p>通常、Webサイトで画像を表示するには、インターネット上のサーバーに「画像をください」と通信（HTTPリクエスト）をする必要があります。しかし、このツールでは通信を一切行いません。</p>
-                        
-                        <div class="deep-dive-box">
-                            <h6>🔍 深掘り：Base64（ベースロクジュウヨン）という魔法の変換</h6>
-                            <p>本ツールに画像（.pngなど）やZIPファイルを読み込ませると、裏側で画像データを<strong>「Base64」という長い文字列（A〜Z、0〜9の記号の羅列）</strong>に自動で変換します。
-                            <br><br>
-                            そして、コード内の <code>hero.png</code> という文字を、この長〜い文字列にこっそりすり替えてから実行しています。ブラウザは文字化されたデータを自力で解読できるため、サーバーと通信しなくても画像や音楽を再生できるのです。</p>
-                        </div>
-                    </div>
-
-                    <div class="edu-section">
-                        <h4 class="edu-section-title">3. 実践！プロの開発機能（IDE）を使いこなそう</h4>
-                        
-                        <div class="edu-card" style="margin-bottom: 16px;">
-                            <h5>📁 ZIPファイルの一括読み込み</h5>
-                            <p>「ファイルを開く」ボタンから、HTMLや画像が詰まった <strong>.zipファイル</strong> をそのまま選択してみてください。ツールが瞬時に中身を展開し、全ての関係性を保ったまま実行準備を整えます。</p>
-                        </div>
-
-                        <div class="edu-card" style="margin-bottom: 16px;">
-                            <h5>📝 プロも使う「Monaco Editor」とコピペ機能</h5>
-                            <p>このエディタには、VS Codeと同じエンジンが積まれています。文字を入力し始めると、正しい命令文を予測して出してくれる「自動補完」が働きます。また、エディタ上部の <strong>「📋 コピー」「📝 ペースト」</strong> ボタンを使えば、ChatGPTが書いたコードを安全に貼り付けることができます。</p>
-                        </div>
-
+            <div class="guide-content">
+                <div class="edu-section">
+                    <h4 class="edu-section-title">1. Webを構成する「3つの言語」の本当の姿</h4>
+                    <p style="margin-bottom: 16px;">Webアプリは「家づくり」に例えられますが、コンピュータの内部ではもう少し複雑な連携が行われています。</p>
+                    <div class="edu-card-grid">
                         <div class="edu-card">
-                            <h5>🩺 セーフティ・コンソールでバグ退治</h5>
-                            <p>プログラムが動かないときは、画面右下の「セーフティ・コンソール」を見てください。JavaScriptの <code>console.log()</code> の結果や、プログラムのエラー（赤文字）がここに表示されます。ゲームのタッチ操作を邪魔しないよう、不要な時は「▼」ボタンで折りたたむことができます。</p>
+                            <h5>📄 HTML (構造とツリー)</h5>
+                            <p>画面にボタンや文字を配置する設計図です。ブラウザはこれを読み込むと、<strong>DOM（Document Object Model）</strong>というツリー状のデータ構造をメモリ上に構築します。</p>
+                        </div>
+                        <div class="edu-card">
+                            <h5>🎨 CSS (装飾とボックス)</h5>
+                            <p>HTMLの各要素にデザインを適用します。CSSの世界では、全ての要素が四角い箱として扱われます（<strong>ボックスモデル</strong>）。</p>
+                        </div>
+                        <div class="edu-card">
+                            <h5>⚙️ JavaScript (動的ロジック)</h5>
+                            <p>ゲームの動きや計算を担当する「頭脳」です。<strong>イベント（出来事）</strong>を監視し、DOMを書き換えたりCSSを操作したりして動きを生み出します。</p>
                         </div>
                     </div>
-
+                </div>
+                <div class="edu-section">
+                    <h4 class="edu-section-title">2. なぜ「サーバーなし」で画像や音楽が動くのか？</h4>
+                    <p>通常、Webサイトで画像を表示するには、インターネット上のサーバーに通信する必要があります。しかし、このツールでは通信を一切行いません。</p>
+                    <div class="deep-dive-box">
+                        <h6>🔍 深掘り：Base64（ベースロクジュウヨン）という魔法の変換</h6>
+                        <p>本ツールに画像（.pngなど）やZIPファイルを読み込ませると、裏側で画像データを<strong>「Base64」という長い文字列</strong>に自動で変換します。コード内のファイル名をこの文字列にすり替えてから実行するため、サーバーと通信しなくても画像や音楽を再生できます。</p>
+                    </div>
+                </div>
+                <div class="edu-section">
+                    <h4 class="edu-section-title">3. 実践！プロの開発機能（IDE）を使いこなそう</h4>
+                    <div class="edu-card" style="margin-bottom: 16px;">
+                        <h5>📁 ZIPファイルの一括読み込み</h5>
+                        <p>「ファイルを開く」ボタンから <strong>.zipファイル</strong> をそのまま選択すると、ツールが中身を展開し全ての関係性を保ったまま実行準備を整えます。</p>
+                    </div>
+                    <div class="edu-card" style="margin-bottom: 16px;">
+                        <h5>📝 コピー＆ペースト機能</h5>
+                        <p>「📋 コピー」はエディタで選択中のコードをコピーします（未選択時は全体をコピー）。「📝 ペースト」はClipboard APIが使えない環境でも専用モーダルで安全に貼り付けできます。</p>
+                    </div>
+                    <div class="edu-card">
+                        <h5>🩺 セーフティ・コンソールでバグ退治</h5>
+                        <p>プログラムが動かないときは、画面右下の「セーフティ・コンソール」を見てください。<code>console.log()</code> の結果やエラー（赤文字）がここに表示されます。</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        let fileStore = { 'index.html': { type: 'html', originalExt: 'html', content: '<!DOCTYPE html>\n<html lang="ja">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">\n  <title>App</title>\n</head>\n<body>\n  <h1>Hello World</h1>\n</body>\n</html>' } };
-        let activeFileName = 'index.html';
-        let autorunTimer = null;
-        let currentBlobUrl = null;
-        let monacoEditor = null;
-        let isEditorLoaded = false;
+<script>
+// ============================================================
+// アイコン生成 (Canvas → apple-touch-icon / favicon / manifest)
+// ============================================================
+(function generateAppIcons() {
+    const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
 
-        const savedFiles = localStorage.getItem('wfr_files');
-        const savedActive = localStorage.getItem('wfr_active');
-        if (savedFiles) { try { fileStore = JSON.parse(savedFiles); } catch(e) {} }
-        if (savedActive && fileStore[savedActive]) activeFileName = savedActive;
+    function drawIcon(size) {
+        const c = document.createElement('canvas');
+        c.width = c.height = size;
+        const ctx = c.getContext('2d');
+        const r = size * 0.22;
 
-        // ----------------------------------------------------
-        // 1. VS Code (Monaco Editor) の読み込みと初期化
-        // ----------------------------------------------------
-        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.40.0/min/vs' }});
-        require(['vs/editor/editor.main'], function() {
-            document.getElementById('loading-msg').style.display = 'none';
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            
-            monacoEditor = monaco.editor.create(document.getElementById('editor-container'), {
-                value: fileStore[activeFileName] ? fileStore[activeFileName].content : '',
-                language: getLanguageForMonaco(fileStore[activeFileName]?.type || 'html'),
-                theme: isDark ? 'vs-dark' : 'vs',
-                automaticLayout: true,
-                minimap: { enabled: false },
-                fontSize: 14,
-                wordWrap: 'on',
-                suggestOnTriggerCharacters: true,
-                quickSuggestions: true,
-                formatOnPaste: true
-            });
+        // 角丸背景
+        const grad = ctx.createLinearGradient(0, 0, size, size);
+        grad.addColorStop(0, '#4f46e5');
+        grad.addColorStop(1, '#2563eb');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(r, 0); ctx.lineTo(size - r, 0);
+        ctx.quadraticCurveTo(size, 0, size, r);
+        ctx.lineTo(size, size - r);
+        ctx.quadraticCurveTo(size, size, size - r, size);
+        ctx.lineTo(r, size);
+        ctx.quadraticCurveTo(0, size, 0, size - r);
+        ctx.lineTo(0, r);
+        ctx.quadraticCurveTo(0, 0, r, 0);
+        ctx.closePath();
+        ctx.fill();
 
-            monacoEditor.onDidChangeModelContent(() => {
-                if (activeFileName && fileStore[activeFileName] && fileStore[activeFileName].type !== 'asset') {
-                    fileStore[activeFileName].content = monacoEditor.getValue();
-                    saveState();
-                    if (document.getElementById('autorun-toggle').checked) {
-                        clearTimeout(autorunTimer); autorunTimer = setTimeout(runCode, 800);
-                    }
-                }
-            });
+        // アイコン文字 "</"
+        ctx.fillStyle = 'rgba(255,255,255,0.18)';
+        ctx.beginPath();
+        ctx.arc(size * 0.72, size * 0.72, size * 0.38, 0, Math.PI * 2);
+        ctx.fill();
 
-            isEditorLoaded = true;
-            updateTabs();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `bold ${size * 0.38}px ui-monospace, monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('</', size * 0.48, size * 0.50);
+
+        return c.toDataURL('image/png');
+    }
+
+    // favicon (32px)
+    const favicon32 = drawIcon(32);
+    const faviconLink = document.getElementById('favicon-link');
+    if (faviconLink) faviconLink.href = favicon32;
+
+    // apple-touch-icon (180px)
+    const icon180 = drawIcon(180);
+    const appleLink = document.getElementById('apple-touch-icon-link');
+    if (appleLink) appleLink.href = icon180;
+
+    // Web App Manifest (インラインJSONをdataURIで埋め込む)
+    const icon192 = drawIcon(192);
+    const icon512 = drawIcon(512);
+    const manifest = {
+        name: 'Web File Runner',
+        short_name: 'WFR',
+        description: 'ブラウザ上で動くシングルファイルIDE',
+        start_url: '.',
+        display: 'standalone',
+        orientation: 'any',
+        background_color: '#4f46e5',
+        theme_color: '#4f46e5',
+        icons: [
+            { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+            { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+        ]
+    };
+    const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+    const manifestURL = URL.createObjectURL(manifestBlob);
+    const manifestLink = document.getElementById('manifest-link');
+    if (manifestLink) manifestLink.href = manifestURL;
+
+    // ショートカットキー表示をOS別に切替
+    const shortcutBadge = document.getElementById('paste-shortcut-key');
+    if (shortcutBadge && isMac) shortcutBadge.textContent = '⌘+V';
+})();
+
+// ============================================================
+// メインアプリ
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    let fileStore = { 'index.html': { type: 'html', originalExt: 'html', content: '<!DOCTYPE html>\n<html lang="ja">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">\n  <title>App</title>\n</head>\n<body>\n  <h1>Hello World</h1>\n</body>\n</html>' } };
+    let activeFileName = 'index.html';
+    let autorunTimer = null;
+    let currentBlobUrl = null;
+    let monacoEditor = null;
+    let isEditorLoaded = false;
+
+    const savedFiles = localStorage.getItem('wfr_files');
+    const savedActive = localStorage.getItem('wfr_active');
+    if (savedFiles) { try { fileStore = JSON.parse(savedFiles); } catch(e) {} }
+    if (savedActive && fileStore[savedActive]) activeFileName = savedActive;
+
+    // --------------------------------------------------
+    // 1. Monaco Editor
+    // --------------------------------------------------
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.40.0/min/vs' }});
+    require(['vs/editor/editor.main'], function() {
+        document.getElementById('loading-msg').style.display = 'none';
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+        monacoEditor = monaco.editor.create(document.getElementById('editor-container'), {
+            value: fileStore[activeFileName] ? fileStore[activeFileName].content : '',
+            language: getLanguageForMonaco(fileStore[activeFileName]?.type || 'html'),
+            theme: isDark ? 'vs-dark' : 'vs',
+            automaticLayout: true,
+            minimap: { enabled: false },
+            fontSize: 14,
+            wordWrap: 'on',
+            suggestOnTriggerCharacters: true,
+            quickSuggestions: true,
+            formatOnPaste: true
         });
 
-        function getLanguageForMonaco(type) {
-            if (type === 'js') return 'javascript';
-            if (type === 'css') return 'css';
-            return 'html';
-        }
-
-        function saveState() {
-            localStorage.setItem('wfr_files', JSON.stringify(fileStore));
-            localStorage.setItem('wfr_active', activeFileName);
-        }
-
-        // ----------------------------------------------------
-        // 2. コピー＆ペースト機能
-        // ----------------------------------------------------
-        document.getElementById('copy-btn').onclick = () => {
-            if (monacoEditor) {
-                navigator.clipboard.writeText(monacoEditor.getValue())
-                    .then(() => {
-                        const btn = document.getElementById('copy-btn');
-                        const originalHtml = btn.innerHTML;
-                        btn.innerHTML = '✅ <span>コピー済</span>';
-                        setTimeout(() => btn.innerHTML = originalHtml, 2000);
-                    })
-                    .catch(() => alert('コピーに失敗しました。キーボードのショートカットをお使いください。'));
-            }
-        };
-
-        document.getElementById('paste-btn').onclick = async () => {
-            if (monacoEditor) {
-                try {
-                    const text = await navigator.clipboard.readText();
-                    const position = monacoEditor.getPosition();
-                    monacoEditor.executeEdits("paste-action", [{
-                        range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
-                        text: text,
-                        forceMoveMarkers: true
-                    }]);
-                    monacoEditor.focus();
-                } catch (err) {
-                    alert('ブラウザの設定で貼り付けがブロックされました。\nエディタをクリックして、キーボードの「Ctrl+V」(MacはCmd+V)を押してください。');
+        monacoEditor.onDidChangeModelContent(() => {
+            if (activeFileName && fileStore[activeFileName] && fileStore[activeFileName].type !== 'asset') {
+                fileStore[activeFileName].content = monacoEditor.getValue();
+                saveState();
+                if (document.getElementById('autorun-toggle').checked) {
+                    clearTimeout(autorunTimer); autorunTimer = setTimeout(runCode, 800);
                 }
-            }
-        };
-
-        // ----------------------------------------------------
-        // 3. UIイベント設定 (タブ管理、ZIP読み込み等)
-        // ----------------------------------------------------
-        function updateTabs(targetName = null) {
-            const container = document.getElementById('file-tabs');
-            container.innerHTML = '';
-            const names = Object.keys(fileStore);
-            document.getElementById('file-status').textContent = names.length > 0 ? `${names.length}ファイル` : 'ファイルなし';
-
-            if (names.length === 0) {
-                activeFileName = null;
-                if (isEditorLoaded) { monacoEditor.setValue(''); monacoEditor.updateOptions({ readOnly: true }); }
-                return;
-            }
-
-            if (targetName && fileStore[targetName]) activeFileName = targetName;
-            else if (!activeFileName || !fileStore[activeFileName]) activeFileName = names[0];
-
-            names.forEach(name => {
-                const tab = document.createElement('div');
-                tab.className = `file-tab ${name === activeFileName ? 'active' : ''}`;
-                
-                const titleSpan = document.createElement('span');
-                titleSpan.className = 'file-tab-title';
-                titleSpan.textContent = name;
-                titleSpan.title = `${name} (Wクリックで名前変更)`;
-                titleSpan.onclick = () => updateTabs(name);
-                titleSpan.ondblclick = (e) => {
-                    e.stopPropagation();
-                    const newName = prompt('新しいファイル名:', name);
-                    if (newName && newName.trim() !== '' && newName !== name) {
-                        if (fileStore[newName]) return alert('同名ファイルが存在します。');
-                        fileStore[newName] = fileStore[name];
-                        delete fileStore[name];
-                        if (activeFileName === name) activeFileName = newName;
-                        saveState(); updateTabs();
-                    }
-                };
-
-                const delSpan = document.createElement('span');
-                delSpan.className = 'file-tab-delete';
-                delSpan.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-                delSpan.onclick = (e) => { e.stopPropagation(); delete fileStore[name]; saveState(); updateTabs(); };
-
-                tab.appendChild(titleSpan); tab.appendChild(delSpan);
-                container.appendChild(tab);
-            });
-
-            if (isEditorLoaded) {
-                const file = fileStore[activeFileName];
-                const model = monacoEditor.getModel();
-                monacoEditor.updateOptions({ readOnly: file.type === 'asset' });
-                if (monacoEditor.getValue() !== file.content) {
-                    monacoEditor.setValue(file.content);
-                }
-                monaco.editor.setModelLanguage(model, getLanguageForMonaco(file.type));
-            }
-        }
-
-        document.getElementById('add-file-btn').onclick = () => {
-            const name = prompt('ファイル名 (例: app.js, style.css)');
-            if (!name) return;
-            const ext = name.includes('.') ? name.split('.').pop() : 'txt';
-            fileStore[name] = { type: ['html','js','css'].includes(ext) ? ext : 'txt', originalExt: ext, content: '' };
-            updateTabs(name);
-        };
-
-        // MIMEタイプを推測する補助関数
-        function getMimeType(ext) {
-            const mimes = { 'png': 'image/png', 'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'gif': 'image/gif', 'svg': 'image/svg+xml', 'mp3': 'audio/mpeg', 'wav': 'audio/wav', 'mp4': 'video/mp4' };
-            return mimes[ext] || 'application/octet-stream';
-        }
-
-        document.getElementById('file-input').onchange = async (e) => {
-            const files = e.target.files;
-            if (!files.length) return;
-            
-            // デフォルトの空のindex.htmlがあれば消す
-            if (Object.keys(fileStore).length === 1 && fileStore['index.html']?.content.trim() === '') {
-                delete fileStore['index.html'];
-            }
-
-            const processSingleFile = async (f, namePath) => {
-                const ext = namePath.split('.').pop().toLowerCase();
-                if (['png','jpg','jpeg','gif','svg','mp3','wav','mp4'].includes(ext)) {
-                    return new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = ev => { 
-                            fileStore[namePath] = { type: 'asset', originalExt: ext, dataUrl: ev.target.result, content: '※アセットデータ（プレビュー時に自動で展開されます）' }; 
-                            resolve();
-                        };
-                        reader.readAsDataURL(f);
-                    });
-                } else {
-                    const text = await f.text();
-                    const type = ['html','js','css'].includes(ext) ? ext : (text.includes('<html')?'html':(text.includes('function')?'js':'txt'));
-                    fileStore[namePath] = { type, originalExt: ext, content: text };
-                }
-            };
-
-            for (let f of files) {
-                if (f.name.toLowerCase().endsWith('.zip')) {
-                    try {
-                        const zip = new JSZip();
-                        const loadedZip = await zip.loadAsync(f);
-                        for (const relativePath in loadedZip.files) {
-                            const zipEntry = loadedZip.files[relativePath];
-                            if (zipEntry.dir) continue;
-                            
-                            if (relativePath.includes('__MACOSX') || relativePath.split('/').pop().startsWith('.')) continue;
-
-                            const ext = relativePath.split('.').pop().toLowerCase();
-                            if (['png','jpg','jpeg','gif','svg','mp3','wav','mp4'].includes(ext)) {
-                                const base64 = await zipEntry.async("base64");
-                                const mime = getMimeType(ext);
-                                fileStore[relativePath] = { type: 'asset', originalExt: ext, dataUrl: `data:${mime};base64,${base64}`, content: '※ZIPから読み込んだアセットデータ' };
-                            } else {
-                                const text = await zipEntry.async("string");
-                                const type = ['html','js','css'].includes(ext) ? ext : (text.includes('<html')?'html':(text.includes('function')?'js':'txt'));
-                                fileStore[relativePath] = { type, originalExt: ext, content: text };
-                            }
-                        }
-                    } catch (err) {
-                        alert(`ZIPファイル(${f.name})の読み込みに失敗しました。`);
-                        console.error(err);
-                    }
-                } else {
-                    await processSingleFile(f, f.name);
-                }
-            }
-            
-            setTimeout(() => { updateTabs(); saveState(); }, 200);
-            e.target.value = ''; 
-        };
-
-        document.getElementById('reset-btn').onclick = () => {
-            if (confirm('コードを全て消去しますか？')) {
-                fileStore = { 'index.html': { type: 'html', originalExt: 'html', content: '' } };
-                updateTabs('index.html'); document.getElementById('preview-frame').src = 'about:blank';
-                document.getElementById('console-output').innerHTML = '<div class="log-entry" style="color: var(--text-muted);">実行待機中...</div>';
-            }
-        };
-
-        function toggleTheme() {
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            if (isDark) {
-                document.documentElement.removeAttribute('data-theme'); localStorage.setItem('wfr_theme', 'light');
-                if (isEditorLoaded) monaco.editor.setTheme('vs');
-            } else {
-                document.documentElement.setAttribute('data-theme', 'dark'); localStorage.setItem('wfr_theme', 'dark');
-                if (isEditorLoaded) monaco.editor.setTheme('vs-dark');
-            }
-        }
-        document.getElementById('theme-btn').onclick = toggleTheme;
-        if (localStorage.getItem('wfr_theme') === 'dark') toggleTheme();
-
-        // モーダル制御
-        const helpModal = document.getElementById('help-modal');
-        document.getElementById('help-btn').onclick = () => helpModal.classList.add('active');
-        document.getElementById('close-icon-btn').onclick = () => helpModal.classList.remove('active');
-        helpModal.onclick = (e) => { if (e.target === helpModal) helpModal.classList.remove('active'); };
-
-        // ----------------------------------------------------
-        // 4. コンソール監視＆実行エンジン
-        // ----------------------------------------------------
-        const consoleOut = document.getElementById('console-output');
-        
-        window.addEventListener('message', (e) => {
-            if (e.data && e.data.source === 'wfr-preview') {
-                const div = document.createElement('div');
-                div.className = `log-entry log-${e.data.type}`;
-                div.innerText = e.data.content;
-                consoleOut.appendChild(div);
-                consoleOut.scrollTop = consoleOut.scrollHeight;
             }
         });
 
-        document.getElementById('clear-console-btn').onclick = (e) => {
-            e.stopPropagation(); 
-            consoleOut.innerHTML = '';
-        };
-
-        // --- コンソールの折りたたみ機能 ---
-        const consoleWrapper = document.getElementById('console-wrapper');
-        const consoleResizer = document.getElementById('console-resizer');
-        const toggleConsoleBtn = document.getElementById('toggle-console-btn');
-        const consoleHeader = document.getElementById('console-header');
-        let isConsoleCollapsed = false;
-
-        consoleHeader.onclick = (e) => {
-            if (e.target.id === 'clear-console-btn') return;
-            
-            isConsoleCollapsed = !isConsoleCollapsed;
-            if (isConsoleCollapsed) {
-                consoleWrapper.classList.add('collapsed');
-                consoleResizer.classList.add('hidden');
-                toggleConsoleBtn.style.transform = 'rotate(-90deg)';
-                toggleConsoleBtn.title = "コンソールを展開する";
-            } else {
-                consoleWrapper.classList.remove('collapsed');
-                consoleResizer.classList.remove('hidden');
-                toggleConsoleBtn.style.transform = 'rotate(0deg)';
-                toggleConsoleBtn.title = "コンソールを折りたたむ";
-            }
-        };
-
-        function runCode() {
-            const fileNames = Object.keys(fileStore);
-            if (fileNames.length === 0) return;
-
-            consoleOut.innerHTML = '<div class="log-entry log-info">▶ 実行開始...</div>';
-
-            let htmlContent = ''; let cssContents = []; let jsContents = []; let assetFiles = {};
-
-            fileNames.forEach(name => {
-                const file = fileStore[name];
-                if (file.type === 'asset') assetFiles[name] = file.dataUrl;
-                else if (file.type === 'html' && !htmlContent) htmlContent = file.content;
-                else if (file.type === 'css') cssContents.push(file.content);
-                else if (file.type === 'js') jsContents.push(file.content);
-            });
-
-            if (!htmlContent) htmlContent = `<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">\n</head>\n<body></body>\n</html>`;
-
-            const replaceAssets = text => {
-                let res = text;
-                Object.keys(assetFiles).forEach(assetName => { 
-                    res = res.split(assetName).join(assetFiles[assetName]); 
-                });
-                return res;
-            };
-
-            htmlContent = replaceAssets(htmlContent);
-            cssContents = cssContents.map(replaceAssets);
-            jsContents = jsContents.map(replaceAssets);
-
-            if (cssContents.length > 0) {
-                const styleTag = `<style>\n${cssContents.join('\n')}\n</style>`;
-                htmlContent = htmlContent.includes('</head>') ? htmlContent.replace('</head>', `${styleTag}\n</head>`) : `${styleTag}\n${htmlContent}`;
-            }
-
-            if (jsContents.length > 0) {
-                const scriptTags = jsContents.map(js => `<script>\n${js}\n<\/script>`).join('\n');
-                htmlContent = htmlContent.includes('</body>') ? htmlContent.replace('</body>', `${scriptTags}\n</body>`) : `${htmlContent}\n${scriptTags}`;
-            }
-
-            const safeConsoleScript = `
-            <script>
-            (function(){
-                function sendLog(type, args) {
-                    const msg = Array.from(args).map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
-                    window.parent.postMessage({ source: 'wfr-preview', type: type, content: msg }, '*');
-                }
-                const cLog = console.log, cErr = console.error, cWarn = console.warn;
-                console.log = function(...args) { cLog.apply(console, args); sendLog('info', args); };
-                console.error = function(...args) { cErr.apply(console, args); sendLog('error', args); };
-                console.warn = function(...args) { cWarn.apply(console, args); sendLog('warn', args); };
-                window.addEventListener('error', e => sendLog('error', [e.message + ' (Line: ' + e.lineno + ')']));
-            })();
-            <\/script>`;
-            
-            htmlContent = htmlContent.includes('<head>') ? htmlContent.replace('<head>', `<head>\n${safeConsoleScript}`) : `${safeConsoleScript}\n${htmlContent}`;
-
-            if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
-            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-            currentBlobUrl = URL.createObjectURL(blob);
-            
-            document.getElementById('preview-frame').src = currentBlobUrl;
-        }
-
-        document.getElementById('run-btn').onclick = runCode;
-
-        // リサイズ処理
-        let isResizingH = false, isResizingV = false;
-        const resizerH = document.getElementById('resizer');
-        const resizerV = document.getElementById('console-resizer');
-        const editorPanel = document.getElementById('editor-panel');
-        const previewWrapper = document.getElementById('preview-wrapper');
-
-        resizerH.onmousedown = e => { isResizingH = true; document.body.style.cursor = 'col-resize'; e.preventDefault(); };
-        resizerV.onmousedown = e => { 
-            if(isConsoleCollapsed) return; 
-            isResizingV = true; document.body.style.cursor = 'row-resize'; e.preventDefault(); 
-        };
-        
-        document.onmousemove = e => {
-            if (isResizingH) {
-                const w = document.querySelector('.workspace').clientWidth;
-                editorPanel.style.flex = `0 0 ${(e.clientX / w) * 100}%`;
-            }
-            if (isResizingV && !isConsoleCollapsed) {
-                const pane = document.querySelector('.right-pane');
-                const rect = pane.getBoundingClientRect();
-                const newHeight = ((e.clientY - rect.top) / rect.height) * 100;
-                if (newHeight > 20 && newHeight < 80) {
-                    previewWrapper.style.flex = `0 0 ${newHeight}%`;
-                }
-            }
-        };
-        document.onmouseup = () => { isResizingH = false; isResizingV = false; document.body.style.cursor = ''; };
-        
-        document.getElementById('fullscreen-btn').onclick = () => { document.getElementById('preview-section').classList.toggle('fullscreen-active'); };
-        
-        setTimeout(() => { if (!isEditorLoaded) updateTabs(); }, 1000);
+        isEditorLoaded = true;
+        updateTabs();
     });
-    </script>
+
+    function getLanguageForMonaco(type) {
+        if (type === 'js') return 'javascript';
+        if (type === 'css') return 'css';
+        return 'html';
+    }
+
+    function saveState() {
+        localStorage.setItem('wfr_files', JSON.stringify(fileStore));
+        localStorage.setItem('wfr_active', activeFileName);
+    }
+
+    // --------------------------------------------------
+    // 2. コピー＆ペースト（最適化版）
+    // --------------------------------------------------
+
+    // --- コピー：選択中テキスト優先、なければ全体 ---
+    document.getElementById('copy-btn').onclick = () => {
+        if (!monacoEditor) return;
+        const selection = monacoEditor.getSelection();
+        const hasSelection = selection && !selection.isEmpty();
+        const textToCopy = hasSelection
+            ? monacoEditor.getModel().getValueInRange(selection)
+            : monacoEditor.getValue();
+
+        navigator.clipboard.writeText(textToCopy)
+            .then(() => {
+                const btn = document.getElementById('copy-btn');
+                const originalHtml = btn.innerHTML;
+                const lineCount = textToCopy.split('\n').length;
+                btn.innerHTML = `✅ <span>${hasSelection ? `${lineCount}行` : '全体'}コピー済</span>`;
+                setTimeout(() => btn.innerHTML = originalHtml, 2000);
+            })
+            .catch(() => {
+                // フォールバック: execCommand
+                monacoEditor.focus();
+                document.execCommand('copy');
+            });
+    };
+
+    // --- ペースト：Clipboard API → フォールバックモーダル ---
+    document.getElementById('paste-btn').onclick = async () => {
+        if (!monacoEditor) return;
+
+        // まず Clipboard API を試みる
+        if (navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
+            try {
+                const text = await navigator.clipboard.readText();
+                insertTextToEditor(text);
+                return;
+            } catch (err) {
+                // 権限エラー等 → モーダルへフォールバック
+            }
+        }
+        // フォールバック: ペーストモーダルを開く
+        openPasteModal();
+    };
+
+    function insertTextToEditor(text) {
+        if (!text || !monacoEditor) return;
+        const selection = monacoEditor.getSelection();
+        monacoEditor.executeEdits('paste-action', [{
+            range: selection.isEmpty()
+                ? new monaco.Range(
+                    selection.positionLineNumber, selection.positionColumn,
+                    selection.positionLineNumber, selection.positionColumn
+                  )
+                : selection,
+            text: text,
+            forceMoveMarkers: true
+        }]);
+        monacoEditor.focus();
+    }
+
+    // --- ペーストモーダル制御 ---
+    const pasteModal      = document.getElementById('paste-modal');
+    const pasteTextarea   = document.getElementById('paste-textarea');
+    const pasteConfirmBtn = document.getElementById('paste-modal-confirm');
+    const pasteStatusDiv  = document.getElementById('paste-status');
+    const pasteStatusText = document.getElementById('paste-status-text');
+
+    function openPasteModal() {
+        pasteTextarea.value = '';
+        updatePasteStatus();
+        pasteModal.classList.add('active');
+        // Safari でも確実にフォーカス
+        requestAnimationFrame(() => {
+            pasteTextarea.focus();
+            pasteTextarea.click();
+        });
+    }
+
+    function closePasteModal() {
+        pasteModal.classList.remove('active');
+        monacoEditor && monacoEditor.focus();
+    }
+
+    function updatePasteStatus() {
+        const val = pasteTextarea.value;
+        const hasContent = val.trim().length > 0;
+        pasteConfirmBtn.disabled = !hasContent;
+        if (hasContent) {
+            const lines = val.split('\n').length;
+            const chars = val.length;
+            pasteStatusDiv.className = 'paste-status ready';
+            pasteStatusText.textContent = `${lines}行 / ${chars}文字 — 準備完了`;
+            pasteTextarea.classList.add('has-content');
+        } else {
+            pasteStatusDiv.className = 'paste-status empty';
+            pasteStatusText.textContent = 'まだ入力がありません';
+            pasteTextarea.classList.remove('has-content');
+        }
+    }
+
+    pasteTextarea.addEventListener('input', updatePasteStatus);
+    pasteTextarea.addEventListener('paste', () => setTimeout(updatePasteStatus, 10));
+
+    pasteConfirmBtn.onclick = () => {
+        const text = pasteTextarea.value;
+        if (text.trim()) {
+            insertTextToEditor(text);
+            closePasteModal();
+        }
+    };
+
+    document.getElementById('paste-modal-close').onclick = closePasteModal;
+    document.getElementById('paste-modal-cancel').onclick = closePasteModal;
+    pasteModal.addEventListener('click', e => { if (e.target === pasteModal) closePasteModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && pasteModal.classList.contains('active')) closePasteModal(); });
+
+    // --------------------------------------------------
+    // 3. UIイベント
+    // --------------------------------------------------
+    function updateTabs(targetName = null) {
+        const container = document.getElementById('file-tabs');
+        container.innerHTML = '';
+        const names = Object.keys(fileStore);
+        document.getElementById('file-status').textContent = names.length > 0 ? `${names.length}ファイル` : 'ファイルなし';
+
+        if (names.length === 0) {
+            activeFileName = null;
+            if (isEditorLoaded) { monacoEditor.setValue(''); monacoEditor.updateOptions({ readOnly: true }); }
+            return;
+        }
+
+        if (targetName && fileStore[targetName]) activeFileName = targetName;
+        else if (!activeFileName || !fileStore[activeFileName]) activeFileName = names[0];
+
+        names.forEach(name => {
+            const tab = document.createElement('div');
+            tab.className = `file-tab ${name === activeFileName ? 'active' : ''}`;
+
+            const titleSpan = document.createElement('span');
+            titleSpan.className = 'file-tab-title';
+            titleSpan.textContent = name;
+            titleSpan.title = `${name} (Wクリックで名前変更)`;
+            titleSpan.onclick = () => updateTabs(name);
+            titleSpan.ondblclick = (e) => {
+                e.stopPropagation();
+                const newName = prompt('新しいファイル名:', name);
+                if (newName && newName.trim() !== '' && newName !== name) {
+                    if (fileStore[newName]) return alert('同名ファイルが存在します。');
+                    fileStore[newName] = fileStore[name];
+                    delete fileStore[name];
+                    if (activeFileName === name) activeFileName = newName;
+                    saveState(); updateTabs();
+                }
+            };
+
+            const delSpan = document.createElement('span');
+            delSpan.className = 'file-tab-delete';
+            delSpan.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+            delSpan.onclick = (e) => { e.stopPropagation(); delete fileStore[name]; saveState(); updateTabs(); };
+
+            tab.appendChild(titleSpan); tab.appendChild(delSpan);
+            container.appendChild(tab);
+        });
+
+        if (isEditorLoaded) {
+            const file = fileStore[activeFileName];
+            const model = monacoEditor.getModel();
+            monacoEditor.updateOptions({ readOnly: file.type === 'asset' });
+            if (monacoEditor.getValue() !== file.content) monacoEditor.setValue(file.content);
+            monaco.editor.setModelLanguage(model, getLanguageForMonaco(file.type));
+        }
+    }
+
+    document.getElementById('add-file-btn').onclick = () => {
+        const name = prompt('ファイル名 (例: app.js, style.css)');
+        if (!name) return;
+        const ext = name.includes('.') ? name.split('.').pop() : 'txt';
+        fileStore[name] = { type: ['html','js','css'].includes(ext) ? ext : 'txt', originalExt: ext, content: '' };
+        updateTabs(name);
+    };
+
+    function getMimeType(ext) {
+        const mimes = { 'png': 'image/png', 'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'gif': 'image/gif', 'svg': 'image/svg+xml', 'mp3': 'audio/mpeg', 'wav': 'audio/wav', 'mp4': 'video/mp4' };
+        return mimes[ext] || 'application/octet-stream';
+    }
+
+    document.getElementById('file-input').onchange = async (e) => {
+        const files = e.target.files;
+        if (!files.length) return;
+
+        if (Object.keys(fileStore).length === 1 && fileStore['index.html']?.content.trim() === '') {
+            delete fileStore['index.html'];
+        }
+
+        const processSingleFile = async (f, namePath) => {
+            const ext = namePath.split('.').pop().toLowerCase();
+            if (['png','jpg','jpeg','gif','svg','mp3','wav','mp4'].includes(ext)) {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = ev => {
+                        fileStore[namePath] = { type: 'asset', originalExt: ext, dataUrl: ev.target.result, content: '※アセットデータ（プレビュー時に自動で展開されます）' };
+                        resolve();
+                    };
+                    reader.readAsDataURL(f);
+                });
+            } else {
+                const text = await f.text();
+                const type = ['html','js','css'].includes(ext) ? ext : (text.includes('<html')?'html':(text.includes('function')?'js':'txt'));
+                fileStore[namePath] = { type, originalExt: ext, content: text };
+            }
+        };
+
+        for (let f of files) {
+            if (f.name.toLowerCase().endsWith('.zip')) {
+                try {
+                    const zip = new JSZip();
+                    const loadedZip = await zip.loadAsync(f);
+                    for (const relativePath in loadedZip.files) {
+                        const zipEntry = loadedZip.files[relativePath];
+                        if (zipEntry.dir) continue;
+                        if (relativePath.includes('__MACOSX') || relativePath.split('/').pop().startsWith('.')) continue;
+                        const ext = relativePath.split('.').pop().toLowerCase();
+                        if (['png','jpg','jpeg','gif','svg','mp3','wav','mp4'].includes(ext)) {
+                            const base64 = await zipEntry.async("base64");
+                            const mime = getMimeType(ext);
+                            fileStore[relativePath] = { type: 'asset', originalExt: ext, dataUrl: `data:${mime};base64,${base64}`, content: '※ZIPから読み込んだアセットデータ' };
+                        } else {
+                            const text = await zipEntry.async("string");
+                            const type = ['html','js','css'].includes(ext) ? ext : (text.includes('<html')?'html':(text.includes('function')?'js':'txt'));
+                            fileStore[relativePath] = { type, originalExt: ext, content: text };
+                        }
+                    }
+                } catch (err) {
+                    alert(`ZIPファイル(${f.name})の読み込みに失敗しました。`);
+                    console.error(err);
+                }
+            } else {
+                await processSingleFile(f, f.name);
+            }
+        }
+
+        setTimeout(() => { updateTabs(); saveState(); }, 200);
+        e.target.value = '';
+    };
+
+    document.getElementById('reset-btn').onclick = () => {
+        if (confirm('コードを全て消去しますか？')) {
+            fileStore = { 'index.html': { type: 'html', originalExt: 'html', content: '' } };
+            updateTabs('index.html');
+            document.getElementById('preview-frame').src = 'about:blank';
+            document.getElementById('console-output').innerHTML = '<div class="log-entry" style="color: var(--text-muted);">実行待機中...</div>';
+        }
+    };
+
+    function toggleTheme() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (isDark) {
+            document.documentElement.removeAttribute('data-theme');
+            localStorage.setItem('wfr_theme', 'light');
+            document.getElementById('theme-color-meta').content = '#4f46e5';
+            if (isEditorLoaded) monaco.editor.setTheme('vs');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('wfr_theme', 'dark');
+            document.getElementById('theme-color-meta').content = '#0f172a';
+            if (isEditorLoaded) monaco.editor.setTheme('vs-dark');
+        }
+    }
+    document.getElementById('theme-btn').onclick = toggleTheme;
+    if (localStorage.getItem('wfr_theme') === 'dark') toggleTheme();
+
+    // モーダル制御
+    const helpModal = document.getElementById('help-modal');
+    document.getElementById('help-btn').onclick = () => helpModal.classList.add('active');
+    document.getElementById('close-icon-btn').onclick = () => helpModal.classList.remove('active');
+    helpModal.onclick = (e) => { if (e.target === helpModal) helpModal.classList.remove('active'); };
+
+    // --------------------------------------------------
+    // 4. コンソール監視＆実行エンジン
+    // --------------------------------------------------
+    const consoleOut = document.getElementById('console-output');
+
+    window.addEventListener('message', (e) => {
+        if (e.data && e.data.source === 'wfr-preview') {
+            const div = document.createElement('div');
+            div.className = `log-entry log-${e.data.type}`;
+            div.innerText = e.data.content;
+            consoleOut.appendChild(div);
+            consoleOut.scrollTop = consoleOut.scrollHeight;
+        }
+    });
+
+    document.getElementById('clear-console-btn').onclick = (e) => {
+        e.stopPropagation();
+        consoleOut.innerHTML = '';
+    };
+
+    const consoleWrapper = document.getElementById('console-wrapper');
+    const consoleResizer = document.getElementById('console-resizer');
+    const toggleConsoleBtn = document.getElementById('toggle-console-btn');
+    const consoleHeader = document.getElementById('console-header');
+    let isConsoleCollapsed = false;
+
+    consoleHeader.onclick = (e) => {
+        if (e.target.id === 'clear-console-btn') return;
+        isConsoleCollapsed = !isConsoleCollapsed;
+        if (isConsoleCollapsed) {
+            consoleWrapper.classList.add('collapsed');
+            consoleResizer.classList.add('hidden');
+            toggleConsoleBtn.style.transform = 'rotate(-90deg)';
+        } else {
+            consoleWrapper.classList.remove('collapsed');
+            consoleResizer.classList.remove('hidden');
+            toggleConsoleBtn.style.transform = 'rotate(0deg)';
+        }
+    };
+
+    function runCode() {
+        const fileNames = Object.keys(fileStore);
+        if (fileNames.length === 0) return;
+
+        consoleOut.innerHTML = '<div class="log-entry log-info">▶ 実行開始...</div>';
+
+        let htmlContent = ''; let cssContents = []; let jsContents = []; let assetFiles = {};
+
+        fileNames.forEach(name => {
+            const file = fileStore[name];
+            if (file.type === 'asset') assetFiles[name] = file.dataUrl;
+            else if (file.type === 'html' && !htmlContent) htmlContent = file.content;
+            else if (file.type === 'css') cssContents.push(file.content);
+            else if (file.type === 'js') jsContents.push(file.content);
+        });
+
+        if (!htmlContent) htmlContent = `<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">\n</head>\n<body></body>\n</html>`;
+
+        const replaceAssets = text => {
+            let res = text;
+            Object.keys(assetFiles).forEach(assetName => { res = res.split(assetName).join(assetFiles[assetName]); });
+            return res;
+        };
+
+        htmlContent = replaceAssets(htmlContent);
+        cssContents = cssContents.map(replaceAssets);
+        jsContents = jsContents.map(replaceAssets);
+
+        if (cssContents.length > 0) {
+            const styleTag = `<style>\n${cssContents.join('\n')}\n</style>`;
+            htmlContent = htmlContent.includes('</head>') ? htmlContent.replace('</head>', `${styleTag}\n</head>`) : `${styleTag}\n${htmlContent}`;
+        }
+
+        if (jsContents.length > 0) {
+            const scriptTags = jsContents.map(js => `<script>\n${js}\n<\/script>`).join('\n');
+            htmlContent = htmlContent.includes('</body>') ? htmlContent.replace('</body>', `${scriptTags}\n</body>`) : `${htmlContent}\n${scriptTags}`;
+        }
+
+        const safeConsoleScript = `
+        <script>
+        (function(){
+            function sendLog(type, args) {
+                const msg = Array.from(args).map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+                window.parent.postMessage({ source: 'wfr-preview', type: type, content: msg }, '*');
+            }
+            const cLog = console.log, cErr = console.error, cWarn = console.warn;
+            console.log = function(...args) { cLog.apply(console, args); sendLog('info', args); };
+            console.error = function(...args) { cErr.apply(console, args); sendLog('error', args); };
+            console.warn = function(...args) { cWarn.apply(console, args); sendLog('warn', args); };
+            window.addEventListener('error', e => sendLog('error', [e.message + ' (Line: ' + e.lineno + ')']));
+        })();
+        <\/script>`;
+
+        htmlContent = htmlContent.includes('<head>') ? htmlContent.replace('<head>', `<head>\n${safeConsoleScript}`) : `${safeConsoleScript}\n${htmlContent}`;
+
+        if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+        const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+        currentBlobUrl = URL.createObjectURL(blob);
+        document.getElementById('preview-frame').src = currentBlobUrl;
+    }
+
+    document.getElementById('run-btn').onclick = runCode;
+
+    // リサイズ
+    let isResizingH = false, isResizingV = false;
+    const resizerH = document.getElementById('resizer');
+    const resizerV = document.getElementById('console-resizer');
+    const editorPanel = document.getElementById('editor-panel');
+    const previewWrapper = document.getElementById('preview-wrapper');
+
+    resizerH.onmousedown = e => { isResizingH = true; document.body.style.cursor = 'col-resize'; e.preventDefault(); };
+    resizerV.onmousedown = e => { if (isConsoleCollapsed) return; isResizingV = true; document.body.style.cursor = 'row-resize'; e.preventDefault(); };
+
+    document.onmousemove = e => {
+        if (isResizingH) {
+            const w = document.querySelector('.workspace').clientWidth;
+            editorPanel.style.flex = `0 0 ${(e.clientX / w) * 100}%`;
+        }
+        if (isResizingV && !isConsoleCollapsed) {
+            const pane = document.querySelector('.right-pane');
+            const rect = pane.getBoundingClientRect();
+            const newHeight = ((e.clientY - rect.top) / rect.height) * 100;
+            if (newHeight > 20 && newHeight < 80) previewWrapper.style.flex = `0 0 ${newHeight}%`;
+        }
+    };
+    document.onmouseup = () => { isResizingH = false; isResizingV = false; document.body.style.cursor = ''; };
+
+    document.getElementById('fullscreen-btn').onclick = () => {
+        document.getElementById('preview-section').classList.toggle('fullscreen-active');
+    };
+
+    setTimeout(() => { if (!isEditorLoaded) updateTabs(); }, 1000);
+});
+</script>
+```
+
 </body>
 </html>
