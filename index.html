@@ -5,9 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web File Runner Ver.1.9 (Educational IDE)</title>
+    <meta name="description" content="サーバー不要でHTML・CSS・JavaScriptを編集・実行できるブラウザベースのIDE。教育用途向け。">
+    <meta property="og:title" content="Web File Runner Ver.1.9">
+    <meta property="og:description" content="ブラウザだけで動く教育用IDE。ZIP対応・Monaco Editor搭載。">
+    <meta property="og:type" content="website">
 
-```
-<!-- ========= PWA / Safari Web App 対応 ========= -->
+    <!-- ========= PWA / Safari Web App 対応 ========= -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WFR">
@@ -213,41 +216,45 @@
     .deep-dive-box p { font-size: 0.9rem; color: var(--text-main); margin-bottom: 0; }
     .code-tag { background-color: var(--border-color); color: var(--text-main); padding: 2px 6px; border-radius: 4px; font-family: ui-monospace, monospace; font-size: 0.9em; }
 
+    .hidden { display: none; }
+    .resp-label { display: inline; }
+    button { min-height: 36px; }
+    .btn { min-height: 36px; }
+
     @media (max-width: 768px) {
         .workspace { flex-direction: column; overflow-y: auto; gap: 12px; }
         .resizer { display: none; }
         .panel { min-height: 40vh; flex: none !important; width: 100% !important; }
         .header-title span.ver-text { display: none; }
         .btn-action-group span { display: none; }
+        .resp-label { display: none; }
     }
 </style>
-```
 
 </head>
 <body>
 
-```
 <header>
     <div class="header-title">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-color)"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
         <span>Web File Runner <span class="ver-text" style="font-size: 0.8em; color: var(--text-muted); font-weight: normal;">Ver.1.9</span></span>
     </div>
     <div class="header-actions">
-        <button id="theme-btn" class="btn btn-text" title="テーマ切替">
+        <button id="theme-btn" class="btn btn-text" title="テーマ切替" aria-label="ダーク/ライトテーマ切替">
             <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </button>
-        <button id="help-btn" class="btn btn-text">
+        <button id="help-btn" class="btn btn-text" aria-label="使い方＆学習ガイドを開く">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <span class="hidden sm:inline">使い方＆学習ガイド</span>
+            <span class="resp-label">使い方＆学習ガイド</span>
         </button>
         <label class="toggle-switch" title="編集時に自動でプレビューを更新します">
-            <input type="checkbox" id="autorun-toggle">
+            <input type="checkbox" id="autorun-toggle" aria-label="自動実行">
             <div class="toggle-track"><div class="toggle-thumb"></div></div>
-            <span class="hidden sm:inline">自動実行</span>
+            <span class="resp-label">自動実行</span>
         </label>
-        <button id="reset-btn" class="btn btn-text danger">
+        <button id="reset-btn" class="btn btn-text danger" aria-label="コードをリセット">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-            <span class="hidden sm:inline">リセット</span>
+            <span class="resp-label">リセット</span>
         </button>
     </div>
 </header>
@@ -277,13 +284,13 @@
                 エディタ
             </div>
             <div class="btn-action-group">
-                <button id="copy-btn" class="btn btn-small" title="選択中のコードをコピー（選択なしは全体）">📋 <span>コピー</span></button>
-                <button id="paste-btn" class="btn btn-small" title="クリップボードから貼り付け">📝 <span>ペースト</span></button>
+                <button id="copy-btn" class="btn btn-small" title="選択中のコードをコピー（選択なしは全体）" aria-label="コードをコピー">📋 <span>コピー</span></button>
+                <button id="paste-btn" class="btn btn-small" title="クリップボードから貼り付け" aria-label="コードをペースト">📝 <span>ペースト</span></button>
             </div>
         </div>
         <div class="file-tabs-container">
             <div id="file-tabs" class="file-tabs"></div>
-            <button id="add-file-btn" title="新規ファイル作成">+</button>
+            <button id="add-file-btn" title="新規ファイル作成" aria-label="新規ファイル作成">+</button>
         </div>
         <div class="panel-content">
             <div id="loading-msg" class="loading-editor">エディタを準備中...</div>
@@ -300,7 +307,7 @@
                     <svg class="icon-sm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                     プレビュー
                 </div>
-                <button id="fullscreen-btn" class="btn btn-small">全画面</button>
+                <button id="fullscreen-btn" class="btn btn-small" aria-label="プレビューを全画面表示">全画面</button>
             </div>
             <div class="panel-content" style="background: #fff;">
                 <iframe id="preview-frame" sandbox="allow-scripts allow-modals allow-same-origin allow-forms allow-popups" src="about:blank"></iframe>
@@ -364,14 +371,14 @@
 </div>
 
 <!-- 学習ガイドモーダル -->
-<div id="help-modal" class="modal-overlay">
+<div id="help-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="help-modal-title">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>
+            <h3 id="help-modal-title">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
                 Web開発の裏側がわかる！学習ガイド 📖
             </h3>
-            <button id="close-icon-btn" style="color: var(--text-muted); border-radius: 50%; padding: 4px; transition: background 0.2s;">
+            <button id="close-icon-btn" aria-label="ガイドを閉じる" style="color: var(--text-muted); border-radius: 50%; padding: 4px; transition: background 0.2s;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
         </div>
@@ -564,6 +571,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         isEditorLoaded = true;
         updateTabs();
+    }, function(err) {
+        const msg = document.getElementById('loading-msg');
+        if (msg) msg.textContent = 'エディタの読み込みに失敗しました。ネットワーク接続を確認してページを再読み込みしてください。';
+        console.error('Monaco load error:', err);
     });
 
     function getLanguageForMonaco(type) {
@@ -573,8 +584,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function saveState() {
-        localStorage.setItem('wfr_files', JSON.stringify(fileStore));
-        localStorage.setItem('wfr_active', activeFileName);
+        try {
+            localStorage.setItem('wfr_files', JSON.stringify(fileStore));
+            localStorage.setItem('wfr_active', activeFileName);
+        } catch (e) {
+            if (e.name === 'QuotaExceededError') {
+                alert('ストレージ容量が不足しています。不要なファイルを削除してください。');
+            }
+        }
     }
 
     // --------------------------------------------------
@@ -693,7 +710,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('paste-modal-close').onclick = closePasteModal;
     document.getElementById('paste-modal-cancel').onclick = closePasteModal;
     pasteModal.addEventListener('click', e => { if (e.target === pasteModal) closePasteModal(); });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && pasteModal.classList.contains('active')) closePasteModal(); });
+    document.addEventListener('keydown', e => {
+        if (!pasteModal.classList.contains('active')) return;
+        if (e.key === 'Escape') { closePasteModal(); return; }
+        if (e.key === 'Tab') {
+            const focusable = Array.from(pasteModal.querySelectorAll('button, textarea, [tabindex]')).filter(el => !el.disabled);
+            const first = focusable[0], last = focusable[focusable.length - 1];
+            if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+    });
 
     // --------------------------------------------------
     // 3. UIイベント
@@ -724,14 +750,15 @@ document.addEventListener('DOMContentLoaded', () => {
             titleSpan.onclick = () => updateTabs(name);
             titleSpan.ondblclick = (e) => {
                 e.stopPropagation();
-                const newName = prompt('新しいファイル名:', name);
-                if (newName && newName.trim() !== '' && newName !== name) {
-                    if (fileStore[newName]) return alert('同名ファイルが存在します。');
-                    fileStore[newName] = fileStore[name];
-                    delete fileStore[name];
-                    if (activeFileName === name) activeFileName = newName;
-                    saveState(); updateTabs();
-                }
+                const raw = prompt('新しいファイル名:', name);
+                if (!raw) return;
+                const newName = raw.trim().replace(/[/\\:*?"<>|]/g, '_');
+                if (!newName || newName === name) return;
+                if (fileStore[newName]) return alert('同名ファイルが存在します。');
+                fileStore[newName] = fileStore[name];
+                delete fileStore[name];
+                if (activeFileName === name) activeFileName = newName;
+                saveState(); updateTabs();
             };
 
             const delSpan = document.createElement('span');
@@ -765,6 +792,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return mimes[ext] || 'application/octet-stream';
     }
 
+    const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB per file
+
     document.getElementById('file-input').onchange = async (e) => {
         const files = e.target.files;
         if (!files.length) return;
@@ -792,6 +821,10 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         for (let f of files) {
+            if (f.size > MAX_FILE_SIZE) {
+                alert(`ファイル "${f.name}" が大きすぎます（上限20MB）。`);
+                continue;
+            }
             if (f.name.toLowerCase().endsWith('.zip')) {
                 try {
                     const zip = new JSZip();
@@ -861,12 +894,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // --------------------------------------------------
     const consoleOut = document.getElementById('console-output');
 
+    const MAX_CONSOLE_ENTRIES = 200;
+
     window.addEventListener('message', (e) => {
         if (e.data && e.data.source === 'wfr-preview') {
             const div = document.createElement('div');
             div.className = `log-entry log-${e.data.type}`;
             div.innerText = e.data.content;
             consoleOut.appendChild(div);
+            while (consoleOut.children.length > MAX_CONSOLE_ENTRIES) {
+                consoleOut.removeChild(consoleOut.firstChild);
+            }
             consoleOut.scrollTop = consoleOut.scrollHeight;
         }
     });
@@ -915,9 +953,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!htmlContent) htmlContent = `<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">\n</head>\n<body></body>\n</html>`;
 
         const replaceAssets = text => {
-            let res = text;
-            Object.keys(assetFiles).forEach(assetName => { res = res.split(assetName).join(assetFiles[assetName]); });
-            return res;
+            const keys = Object.keys(assetFiles);
+            if (keys.length === 0) return text;
+            const pattern = new RegExp(keys.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'g');
+            return text.replace(pattern, match => assetFiles[match]);
         };
 
         htmlContent = replaceAssets(htmlContent);
@@ -990,7 +1029,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => { if (!isEditorLoaded) updateTabs(); }, 1000);
 });
 </script>
-```
 
 </body>
 </html>
