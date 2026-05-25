@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web File Runner Ver.1.9 (Educational IDE)</title>
+    <title>Web File Runner Ver.2.0 (Educational IDE)</title>
     <meta name="description" content="サーバー不要でHTML・CSS・JavaScriptを編集・実行できるブラウザベースのIDE。教育用途向け。">
     <meta property="og:title" content="Web File Runner Ver.1.9">
     <meta property="og:description" content="ブラウザだけで動く教育用IDE。ZIP対応・Monaco Editor搭載。">
@@ -221,6 +221,42 @@
     button { min-height: 36px; }
     .btn { min-height: 36px; }
 
+    /* ========= ダウンロードドロップダウン ========= */
+    .dropdown { position: relative; display: inline-flex; }
+    .dropdown-menu { position: absolute; right: 0; top: calc(100% + 4px); background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,0.16); z-index: 1000; min-width: 180px; overflow: hidden; display: none; }
+    .dropdown-menu.open { display: block; }
+    .dropdown-menu button { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 10px 16px; font-size: 0.85rem; color: var(--text-main); background: none; border: none; min-height: 40px; transition: background 0.15s; }
+    .dropdown-menu button:hover { background: var(--panel-header-bg); color: var(--primary-color); }
+
+    /* ========= デバイスプレビュー ========= */
+    .device-btn-group { display: flex; gap: 4px; align-items: center; }
+    .device-btn { font-size: 0.9rem; padding: 3px 8px; }
+    .device-btn.active { border-color: var(--primary-color); color: var(--primary-color); background: rgba(99,102,241,0.08); }
+    #preview-frame-outer { display: flex; justify-content: center; align-items: flex-start; width: 100%; height: 100%; background: transparent; overflow: auto; transition: background 0.2s; }
+    #preview-frame-outer.device-mode { background: #94a3b8; padding: 8px; box-sizing: border-box; }
+    [data-theme="dark"] #preview-frame-outer.device-mode { background: #334155; }
+
+    /* ========= フォントサイズ調整 ========= */
+    .font-size-ctrl { display: flex; align-items: center; gap: 3px; }
+    .font-size-num { font-size: 0.75rem; color: var(--text-muted); min-width: 26px; text-align: center; user-select: none; font-weight: bold; font-family: ui-monospace, monospace; }
+
+    /* ========= ショートカットポップアップ ========= */
+    .shortcut-anchor { position: relative; }
+    .shortcuts-popup { position: absolute; right: 0; top: calc(100% + 8px); background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: 0 16px 40px rgba(0,0,0,0.2); z-index: 5000; width: 290px; display: none; overflow: hidden; }
+    .shortcuts-popup.open { display: block; }
+    .sc-popup-hdr { background: var(--panel-header-bg); padding: 10px 16px; font-size: 0.85rem; font-weight: bold; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 6px; }
+    .shortcut-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--border-color); font-size: 0.82rem; }
+    .shortcut-row:last-child { border-bottom: none; }
+    .sc-label { color: var(--text-main); }
+    .sc-keys { display: flex; gap: 3px; align-items: center; }
+    .sc-key { background: var(--panel-header-bg); border: 1px solid var(--border-color); border-radius: 4px; padding: 1px 6px; font-family: ui-monospace, monospace; font-size: 0.78rem; color: var(--primary-color); font-weight: bold; }
+
+    /* ========= コンソールREPL ========= */
+    .console-input-area { display: flex; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding: 4px 12px; gap: 8px; flex-shrink: 0; background: var(--console-bg); }
+    .console-repl-prompt { color: #34d399; font-family: ui-monospace, monospace; font-size: 0.9rem; font-weight: bold; user-select: none; }
+    #console-input { flex: 1; background: none; border: none; color: var(--console-text); font-family: ui-monospace, monospace; font-size: 0.8rem; outline: none; padding: 4px 0; min-height: 28px; }
+    #console-input::placeholder { color: rgba(248,250,252,0.3); }
+
     @media (max-width: 768px) {
         .workspace { flex-direction: column; overflow-y: auto; gap: 12px; }
         .resizer { display: none; }
@@ -237,12 +273,26 @@
 <header>
     <div class="header-title">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-color)"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
-        <span>Web File Runner <span class="ver-text" style="font-size: 0.8em; color: var(--text-muted); font-weight: normal;">Ver.1.9</span></span>
+        <span>Web File Runner <span class="ver-text" style="font-size: 0.8em; color: var(--text-muted); font-weight: normal;">Ver.2.0</span></span>
     </div>
     <div class="header-actions">
         <button id="theme-btn" class="btn btn-text" title="テーマ切替" aria-label="ダーク/ライトテーマ切替">
             <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </button>
+        <div class="shortcut-anchor" id="shortcut-anchor">
+            <button id="shortcuts-btn" class="btn btn-text" title="キーボードショートカット一覧" aria-label="ショートカット一覧">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M8 12h.001M12 12h.001M16 12h.001M7 16h10"/></svg>
+                <span class="resp-label">ショートカット</span>
+            </button>
+            <div class="shortcuts-popup" id="shortcuts-popup">
+                <div class="sc-popup-hdr">⌨ キーボードショートカット</div>
+                <div class="shortcut-row"><span class="sc-label">コードを実行</span><div class="sc-keys"><span class="sc-key">Ctrl</span><span class="sc-key">Enter</span></div></div>
+                <div class="shortcut-row"><span class="sc-label">ファイルをDL</span><div class="sc-keys"><span class="sc-key">Ctrl</span><span class="sc-key">S</span></div></div>
+                <div class="shortcut-row"><span class="sc-label">コードを整形</span><div class="sc-keys"><span class="sc-key">Alt</span><span class="sc-key">Shift</span><span class="sc-key">F</span></div></div>
+                <div class="shortcut-row"><span class="sc-label">検索</span><div class="sc-keys"><span class="sc-key">Ctrl</span><span class="sc-key">F</span></div></div>
+                <div class="shortcut-row"><span class="sc-label">モーダルを閉じる</span><div class="sc-keys"><span class="sc-key">Esc</span></div></div>
+            </div>
+        </div>
         <button id="help-btn" class="btn btn-text" aria-label="使い方＆学習ガイドを開く">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <span class="resp-label">使い方＆学習ガイド</span>
@@ -269,6 +319,16 @@
         <span id="file-status" class="file-status">ファイルなし</span>
     </div>
     <div class="action-buttons">
+        <div class="dropdown" id="download-dropdown">
+            <button id="download-btn" class="btn btn-outline" title="ファイルをダウンロード" aria-label="ダウンロード">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span class="resp-label">DL</span> ▾
+            </button>
+            <div class="dropdown-menu" id="download-menu">
+                <button id="dl-current">📄 現在のファイル</button>
+                <button id="dl-zip">📦 全ファイル (ZIP)</button>
+            </div>
+        </div>
         <button id="run-btn" class="btn btn-primary">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             コードを実行
@@ -284,6 +344,12 @@
                 エディタ
             </div>
             <div class="btn-action-group">
+                <div class="font-size-ctrl">
+                    <button id="font-dec-btn" class="btn btn-small" title="フォントサイズを小さく" aria-label="フォントサイズを小さく">A−</button>
+                    <span id="font-size-num" class="font-size-num">14</span>
+                    <button id="font-inc-btn" class="btn btn-small" title="フォントサイズを大きく" aria-label="フォントサイズを大きく">A＋</button>
+                </div>
+                <button id="format-btn" class="btn btn-small" title="コードを自動整形 (Alt+Shift+F)" aria-label="コードをフォーマット">⚡<span>整形</span></button>
                 <button id="copy-btn" class="btn btn-small" title="選択中のコードをコピー（選択なしは全体）" aria-label="コードをコピー">📋 <span>コピー</span></button>
                 <button id="paste-btn" class="btn btn-small" title="クリップボードから貼り付け" aria-label="コードをペースト">📝 <span>ペースト</span></button>
             </div>
@@ -307,10 +373,20 @@
                     <svg class="icon-sm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                     プレビュー
                 </div>
-                <button id="fullscreen-btn" class="btn btn-small" aria-label="プレビューを全画面表示">全画面</button>
+                <div style="display:flex;gap:6px;align-items:center;">
+                    <div class="device-btn-group" id="device-btn-group">
+                        <button class="btn btn-small device-btn active" data-width="" title="デスクトップ" aria-label="デスクトップ表示">🖥</button>
+                        <button class="btn btn-small device-btn" data-width="768px" title="タブレット (768px)" aria-label="タブレット表示">📱</button>
+                        <button class="btn btn-small device-btn" data-width="375px" title="スマホ (375px)" aria-label="スマホ表示">📲</button>
+                    </div>
+                    <button id="refresh-preview-btn" class="btn btn-small" title="プレビューを再読み込み" aria-label="プレビューを更新">↻</button>
+                    <button id="fullscreen-btn" class="btn btn-small" aria-label="プレビューを全画面表示">全画面</button>
+                </div>
             </div>
-            <div class="panel-content" style="background: #fff;">
-                <iframe id="preview-frame" sandbox="allow-scripts allow-modals allow-same-origin allow-forms allow-popups" src="about:blank"></iframe>
+            <div class="panel-content" style="overflow: auto; padding: 0;">
+                <div id="preview-frame-outer">
+                    <iframe id="preview-frame" sandbox="allow-scripts allow-modals allow-same-origin allow-forms allow-popups" src="about:blank"></iframe>
+                </div>
             </div>
         </div>
 
@@ -327,6 +403,10 @@
             </div>
             <div id="console-output">
                 <div class="log-entry" style="color: var(--text-muted);">実行待機中... エラーやログがここに表示されます。</div>
+            </div>
+            <div class="console-input-area" id="console-input-area">
+                <span class="console-repl-prompt">›</span>
+                <input id="console-input" type="text" placeholder="JavaScript を実行... (Enter で確定)" autocomplete="off" spellcheck="false" aria-label="コンソール入力">
             </div>
         </div>
     </div>
@@ -532,6 +612,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentBlobUrl = null;
     let monacoEditor = null;
     let isEditorLoaded = false;
+    let editorFontSize = Math.max(10, Math.min(24, parseInt(localStorage.getItem('wfr_fontsize')) || 14));
+    document.getElementById('font-size-num').textContent = editorFontSize;
 
     const savedFiles = localStorage.getItem('wfr_files');
     const savedActive = localStorage.getItem('wfr_active');
@@ -552,12 +634,15 @@ document.addEventListener('DOMContentLoaded', () => {
             theme: isDark ? 'vs-dark' : 'vs',
             automaticLayout: true,
             minimap: { enabled: false },
-            fontSize: 14,
+            fontSize: editorFontSize,
             wordWrap: 'on',
             suggestOnTriggerCharacters: true,
             quickSuggestions: true,
             formatOnPaste: true
         });
+
+        monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => runCode());
+        monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => downloadCurrentFile());
 
         monacoEditor.onDidChangeModelContent(() => {
             if (activeFileName && fileStore[activeFileName] && fileStore[activeFileName].type !== 'asset') {
@@ -927,10 +1012,12 @@ document.addEventListener('DOMContentLoaded', () => {
             consoleWrapper.classList.add('collapsed');
             consoleResizer.classList.add('hidden');
             toggleConsoleBtn.style.transform = 'rotate(-90deg)';
+            document.getElementById('console-input-area').style.display = 'none';
         } else {
             consoleWrapper.classList.remove('collapsed');
             consoleResizer.classList.remove('hidden');
             toggleConsoleBtn.style.transform = 'rotate(0deg)';
+            document.getElementById('console-input-area').style.display = 'flex';
         }
     };
 
@@ -977,7 +1064,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <script>
         (function(){
             function sendLog(type, args) {
-                const msg = Array.from(args).map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+                const msg = Array.from(args).map(a => { try { return typeof a === 'object' ? JSON.stringify(a) : String(a); } catch(e) { return String(a); } }).join(' ');
                 window.parent.postMessage({ source: 'wfr-preview', type: type, content: msg }, '*');
             }
             const cLog = console.log, cErr = console.error, cWarn = console.warn;
@@ -985,6 +1072,16 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error = function(...args) { cErr.apply(console, args); sendLog('error', args); };
             console.warn = function(...args) { cWarn.apply(console, args); sendLog('warn', args); };
             window.addEventListener('error', e => sendLog('error', [e.message + ' (Line: ' + e.lineno + ')']));
+            window.addEventListener('message', function(e) {
+                if (e.data && e.data.source === 'wfr-repl') {
+                    try {
+                        const result = eval(e.data.code);
+                        if (result !== undefined) sendLog('info', [result]);
+                    } catch(err) {
+                        sendLog('error', [err.message]);
+                    }
+                }
+            });
         })();
         <\/script>`;
 
@@ -997,6 +1094,182 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('run-btn').onclick = runCode;
+
+    // --------------------------------------------------
+    // 5. フォントサイズ調整
+    // --------------------------------------------------
+    function setFontSize(size) {
+        editorFontSize = Math.max(10, Math.min(24, size));
+        if (monacoEditor) monacoEditor.updateOptions({ fontSize: editorFontSize });
+        document.getElementById('font-size-num').textContent = editorFontSize;
+        localStorage.setItem('wfr_fontsize', editorFontSize);
+    }
+    document.getElementById('font-dec-btn').onclick = () => setFontSize(editorFontSize - 1);
+    document.getElementById('font-inc-btn').onclick = () => setFontSize(editorFontSize + 1);
+
+    // --------------------------------------------------
+    // 6. コードフォーマット
+    // --------------------------------------------------
+    document.getElementById('format-btn').onclick = () => {
+        if (monacoEditor) monacoEditor.getAction('editor.action.formatDocument').run();
+    };
+
+    // --------------------------------------------------
+    // 7. ダウンロード機能
+    // --------------------------------------------------
+    function downloadCurrentFile() {
+        if (!activeFileName || !fileStore[activeFileName]) return;
+        const file = fileStore[activeFileName];
+        let blob;
+        if (file.type === 'asset') {
+            const parts = file.dataUrl.split(',');
+            const mime = parts[0].split(':')[1].split(';')[0];
+            const bytes = atob(parts[1]);
+            const arr = new Uint8Array(bytes.length);
+            for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+            blob = new Blob([arr], { type: mime });
+        } else {
+            blob = new Blob([file.content], { type: 'text/plain;charset=utf-8' });
+        }
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = activeFileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    }
+
+    async function downloadAllAsZip() {
+        if (Object.keys(fileStore).length === 0) return;
+        const zip = new JSZip();
+        Object.entries(fileStore).forEach(([name, file]) => {
+            if (file.type === 'asset') {
+                zip.file(name, file.dataUrl.split(',')[1], { base64: true });
+            } else {
+                zip.file(name, file.content);
+            }
+        });
+        const blob = await zip.generateAsync({ type: 'blob' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'project.zip';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    }
+
+    const dlMenu = document.getElementById('download-menu');
+    document.getElementById('download-btn').onclick = (e) => { e.stopPropagation(); dlMenu.classList.toggle('open'); };
+    document.getElementById('dl-current').onclick = () => { dlMenu.classList.remove('open'); downloadCurrentFile(); };
+    document.getElementById('dl-zip').onclick = () => { dlMenu.classList.remove('open'); downloadAllAsZip(); };
+    document.addEventListener('click', () => dlMenu.classList.remove('open'));
+
+    // --------------------------------------------------
+    // 8. デバイスプレビュー切替
+    // --------------------------------------------------
+    document.querySelectorAll('.device-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const w = btn.dataset.width;
+            const frame = document.getElementById('preview-frame');
+            const outer = document.getElementById('preview-frame-outer');
+            if (!w) {
+                frame.style.width = '';
+                outer.classList.remove('device-mode');
+            } else {
+                frame.style.width = w;
+                outer.classList.add('device-mode');
+            }
+        };
+    });
+
+    // --------------------------------------------------
+    // 9. プレビュー更新ボタン
+    // --------------------------------------------------
+    document.getElementById('refresh-preview-btn').onclick = () => {
+        if (currentBlobUrl) document.getElementById('preview-frame').src = currentBlobUrl;
+    };
+
+    // --------------------------------------------------
+    // 10. ショートカット一覧ポップアップ
+    // --------------------------------------------------
+    const shortcutsPopup = document.getElementById('shortcuts-popup');
+    document.getElementById('shortcuts-btn').onclick = (e) => {
+        e.stopPropagation();
+        shortcutsPopup.classList.toggle('open');
+    };
+    document.addEventListener('click', (e) => {
+        if (!document.getElementById('shortcut-anchor').contains(e.target)) {
+            shortcutsPopup.classList.remove('open');
+        }
+    });
+
+    // --------------------------------------------------
+    // 11. グローバルキーボードショートカット（Monaco外）
+    // --------------------------------------------------
+    document.addEventListener('keydown', (e) => {
+        if (pasteModal.classList.contains('active')) return;
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault(); runCode();
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault(); downloadCurrentFile();
+        }
+        if (e.key === 'Escape') {
+            dlMenu.classList.remove('open');
+            shortcutsPopup.classList.remove('open');
+        }
+    });
+
+    // --------------------------------------------------
+    // 12. コンソールREPL入力
+    // --------------------------------------------------
+    const consoleInputEl = document.getElementById('console-input');
+    const replHistory = [];
+    let replHistoryIdx = -1;
+
+    consoleInputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const code = consoleInputEl.value.trim();
+            if (!code) return;
+            replHistory.unshift(code);
+            if (replHistory.length > 50) replHistory.pop();
+            replHistoryIdx = -1;
+            const frame = document.getElementById('preview-frame');
+            if (frame.contentWindow) {
+                frame.contentWindow.postMessage({ source: 'wfr-repl', code }, '*');
+            }
+            const div = document.createElement('div');
+            div.className = 'log-entry';
+            div.style.color = '#94a3b8';
+            div.textContent = '› ' + code;
+            consoleOut.appendChild(div);
+            while (consoleOut.children.length > MAX_CONSOLE_ENTRIES) consoleOut.removeChild(consoleOut.firstChild);
+            consoleInputEl.value = '';
+            consoleOut.scrollTop = consoleOut.scrollHeight;
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (replHistoryIdx < replHistory.length - 1) {
+                replHistoryIdx++;
+                consoleInputEl.value = replHistory[replHistoryIdx];
+            }
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (replHistoryIdx > 0) {
+                replHistoryIdx--;
+                consoleInputEl.value = replHistory[replHistoryIdx];
+            } else {
+                replHistoryIdx = -1;
+                consoleInputEl.value = '';
+            }
+        }
+    });
+
+    // コンソールが折り畳まれたときREPL入力欄も隠す
+    const consoleInputArea = document.getElementById('console-input-area');
 
     // リサイズ
     let isResizingH = false, isResizingV = false;
