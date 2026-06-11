@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web File Runner Ver.2.0 (Educational IDE)</title>
     <meta name="description" content="サーバー不要でHTML・CSS・JavaScriptを編集・実行できるブラウザベースのIDE。教育用途向け。">
-    <meta property="og:title" content="Web File Runner Ver.1.9">
+    <meta property="og:title" content="Web File Runner Ver.2.0">
     <meta property="og:description" content="ブラウザだけで動く教育用IDE。ZIP対応・Monaco Editor搭載。">
     <meta property="og:type" content="website">
 
@@ -397,7 +397,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             </div>
             <div class="panel-content" style="overflow: auto; padding: 0;">
                 <div id="preview-frame-outer">
-                    <iframe id="preview-frame" sandbox="allow-scripts allow-modals allow-same-origin allow-forms allow-popups" src="about:blank"></iframe>
+                    <iframe id="preview-frame" title="プレビュー" sandbox="allow-scripts allow-modals allow-forms allow-popups" src="about:blank"></iframe>
                 </div>
             </div>
         </div>
@@ -627,10 +627,31 @@ document.addEventListener('DOMContentLoaded', () => {
     let editorFontSize = Math.max(10, Math.min(24, parseInt(localStorage.getItem('wfr_fontsize')) || 14));
     document.getElementById('font-size-num').textContent = editorFontSize;
 
+    // ファイル名の安全性チェック（プロトタイプ汚染や不正なキーを防止）
+    function isSafeFileName(name) {
+        return typeof name === 'string' && name.length > 0 && name.length <= 200 &&
+               !['__proto__', 'constructor', 'prototype'].includes(name);
+    }
+
     const savedFiles = localStorage.getItem('wfr_files');
     const savedActive = localStorage.getItem('wfr_active');
-    if (savedFiles) { try { fileStore = JSON.parse(savedFiles); } catch(e) {} }
-    if (savedActive && fileStore[savedActive]) activeFileName = savedActive;
+    if (savedFiles) {
+        try {
+            const parsed = JSON.parse(savedFiles);
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                const restored = {};
+                Object.keys(parsed).forEach(name => {
+                    const file = parsed[name];
+                    if (!isSafeFileName(name) || !file || typeof file !== 'object') return;
+                    if (file.type === 'asset' ? typeof file.dataUrl !== 'string' : typeof file.content !== 'string') return;
+                    if (typeof file.content !== 'string') file.content = '※アセットデータ（プレビュー時に自動で展開されます）';
+                    restored[name] = file;
+                });
+                if (Object.keys(restored).length > 0) fileStore = restored;
+            }
+        } catch(e) {}
+    }
+    if (savedActive && Object.prototype.hasOwnProperty.call(fileStore, savedActive)) activeFileName = savedActive;
 
     // --------------------------------------------------
     // 1. Monaco Editor
@@ -713,9 +734,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => btn.innerHTML = originalHtml, 2000);
             })
             .catch(() => {
-                // フォールバック: execCommand
+                // フォールバック: 一時textarea経由でコピー（未選択時の全体コピーにも対応）
+                const ta = document.createElement('textarea');
+                ta.value = textToCopy;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                try { document.execCommand('copy'); } catch (err) {}
+                document.body.removeChild(ta);
                 monacoEditor.focus();
-                document.execCommand('copy');
             });
     };
 
@@ -851,8 +879,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!raw) return;
                 const newName = raw.trim().replace(/[/\\:*?"<>|]/g, '_');
                 if (!newName || newName === name) return;
-                if (fileStore[newName]) return alert('同名ファイルが存在します。');
+                if (!isSafeFileName(newName)) return alert('そのファイル名は使用できません。');
+                if (Object.prototype.hasOwnProperty.call(fileStore, newName)) return alert('同名ファイルが存在します。');
                 fileStore[newName] = fileStore[name];
+                // 拡張子が変わった場合は種別も更新（アセットは除く）
+                if (fileStore[newName].type !== 'asset') {
+                    const newExt = newName.includes('.') ? newName.split('.').pop().toLowerCase() : 'txt';
+                    fileStore[newName].type = ['html','js','css'].includes(newExt) ? newExt : 'txt';
+                    fileStore[newName].originalExt = newExt;
+                }
                 delete fileStore[name];
                 if (activeFileName === name) activeFileName = newName;
                 saveState(); updateTabs();
@@ -861,7 +896,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const delSpan = document.createElement('span');
             delSpan.className = 'file-tab-delete';
             delSpan.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-            delSpan.onclick = (e) => { e.stopPropagation(); delete fileStore[name]; saveState(); updateTabs(); };
+            delSpan.onclick = (e) => {
+                e.stopPropagation();
+                if (!confirm(`「${name}」を削除しますか？`)) return;
+                delete fileStore[name]; saveState(); updateTabs();
+            };
 
             tab.appendChild(titleSpan); tab.appendChild(delSpan);
             container.appendChild(tab);
@@ -877,15 +916,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('add-file-btn').onclick = () => {
-        const name = prompt('ファイル名 (例: app.js, style.css)');
-        if (!name) return;
-        const ext = name.includes('.') ? name.split('.').pop() : 'txt';
+        const raw = prompt('ファイル名 (例: app.js, style.css)');
+        if (!raw) return;
+        const name = raw.trim().replace(/[/\\:*?"<>|]/g, '_');
+        if (!name || !isSafeFileName(name)) return alert('そのファイル名は使用できません。');
+        if (Object.prototype.hasOwnProperty.call(fileStore, name)) return alert('同名ファイルが存在します。');
+        const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : 'txt';
         fileStore[name] = { type: ['html','js','css'].includes(ext) ? ext : 'txt', originalExt: ext, content: '' };
+        saveState();
         updateTabs(name);
     };
 
+    const ASSET_EXTENSIONS = ['png','jpg','jpeg','gif','svg','webp','ico','mp3','wav','ogg','mp4','webm'];
+
     function getMimeType(ext) {
-        const mimes = { 'png': 'image/png', 'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'gif': 'image/gif', 'svg': 'image/svg+xml', 'mp3': 'audio/mpeg', 'wav': 'audio/wav', 'mp4': 'video/mp4' };
+        const mimes = { 'png': 'image/png', 'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'gif': 'image/gif', 'svg': 'image/svg+xml', 'webp': 'image/webp', 'ico': 'image/x-icon', 'mp3': 'audio/mpeg', 'wav': 'audio/wav', 'ogg': 'audio/ogg', 'mp4': 'video/mp4', 'webm': 'video/webm' };
         return mimes[ext] || 'application/octet-stream';
     }
 
@@ -900,8 +945,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const processSingleFile = async (f, namePath) => {
+            if (!isSafeFileName(namePath)) { console.warn('不正なファイル名をスキップ:', namePath); return; }
             const ext = namePath.split('.').pop().toLowerCase();
-            if (['png','jpg','jpeg','gif','svg','mp3','wav','mp4'].includes(ext)) {
+            if (ASSET_EXTENSIONS.includes(ext)) {
                 return new Promise((resolve) => {
                     const reader = new FileReader();
                     reader.onload = ev => {
@@ -930,8 +976,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         const zipEntry = loadedZip.files[relativePath];
                         if (zipEntry.dir) continue;
                         if (relativePath.includes('__MACOSX') || relativePath.split('/').pop().startsWith('.')) continue;
+                        if (!isSafeFileName(relativePath)) { console.warn('不正なZIPエントリ名をスキップ:', relativePath); continue; }
                         const ext = relativePath.split('.').pop().toLowerCase();
-                        if (['png','jpg','jpeg','gif','svg','mp3','wav','mp4'].includes(ext)) {
+                        if (ASSET_EXTENSIONS.includes(ext)) {
                             const base64 = await zipEntry.async("base64");
                             const mime = getMimeType(ext);
                             fileStore[relativePath] = { type: 'asset', originalExt: ext, dataUrl: `data:${mime};base64,${base64}`, content: '※ZIPから読み込んだアセットデータ' };
@@ -950,7 +997,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        setTimeout(() => { updateTabs(); saveState(); }, 200);
+        updateTabs();
+        saveState();
         e.target.value = '';
     };
 
@@ -958,6 +1006,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (confirm('コードを全て消去しますか？')) {
             fileStore = { 'index.html': { type: 'html', originalExt: 'html', content: '' } };
             updateTabs('index.html');
+            saveState();
+            if (currentBlobUrl) { URL.revokeObjectURL(currentBlobUrl); currentBlobUrl = null; }
             document.getElementById('preview-frame').src = 'about:blank';
             document.getElementById('console-output').innerHTML = '<div class="log-entry" style="color: var(--text-muted);">実行待機中...</div>';
         }
@@ -993,10 +1043,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const MAX_CONSOLE_ENTRIES = 200;
 
+    const LOG_TYPES = ['info', 'warn', 'error'];
+
     window.addEventListener('message', (e) => {
-        if (e.data && e.data.source === 'wfr-preview') {
+        // プレビューiframe以外のウィンドウからのメッセージは無視
+        const frameWin = document.getElementById('preview-frame').contentWindow;
+        if (e.source !== frameWin) return;
+        if (e.data && e.data.source === 'wfr-preview' && typeof e.data.content === 'string') {
+            const type = LOG_TYPES.includes(e.data.type) ? e.data.type : 'info';
             const div = document.createElement('div');
-            div.className = `log-entry log-${e.data.type}`;
+            div.className = `log-entry log-${type}`;
             div.innerText = e.data.content;
             consoleOut.appendChild(div);
             while (consoleOut.children.length > MAX_CONSOLE_ENTRIES) {
@@ -1052,7 +1108,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!htmlContent) htmlContent = `<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">\n</head>\n<body></body>\n</html>`;
 
         const replaceAssets = text => {
-            const keys = Object.keys(assetFiles);
+            // 長い名前を優先してマッチさせる（"cat.png" が "concat.png" の一部を置換しないように）
+            const keys = Object.keys(assetFiles).sort((a, b) => b.length - a.length);
             if (keys.length === 0) return text;
             const pattern = new RegExp(keys.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'g');
             return text.replace(pattern, match => assetFiles[match]);
@@ -1085,7 +1142,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.warn = function(...args) { cWarn.apply(console, args); sendLog('warn', args); };
             window.addEventListener('error', e => sendLog('error', [e.message + ' (Line: ' + e.lineno + ')']));
             window.addEventListener('message', function(e) {
-                if (e.data && e.data.source === 'wfr-repl') {
+                if (e.source !== window.parent) return; // 親(IDE)以外からのコードは実行しない
+                if (e.data && e.data.source === 'wfr-repl' && typeof e.data.code === 'string') {
                     try {
                         const result = eval(e.data.code);
                         if (result !== undefined) sendLog('info', [result]);
@@ -1134,12 +1192,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = fileStore[activeFileName];
         let blob;
         if (file.type === 'asset') {
-            const parts = file.dataUrl.split(',');
-            const mime = parts[0].split(':')[1].split(';')[0];
-            const bytes = atob(parts[1]);
-            const arr = new Uint8Array(bytes.length);
-            for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
-            blob = new Blob([arr], { type: mime });
+            try {
+                const parts = file.dataUrl.split(',');
+                const mime = (parts[0].split(':')[1] || 'application/octet-stream').split(';')[0];
+                const bytes = atob(parts[1]);
+                const arr = new Uint8Array(bytes.length);
+                for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+                blob = new Blob([arr], { type: mime });
+            } catch (err) {
+                alert('アセットデータが壊れているためダウンロードできません。');
+                return;
+            }
         } else {
             blob = new Blob([file.content], { type: 'text/plain;charset=utf-8' });
         }
@@ -1227,12 +1290,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
             e.preventDefault(); runCode();
         }
-        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
             e.preventDefault(); downloadCurrentFile();
         }
         if (e.key === 'Escape') {
             dlMenu.classList.remove('open');
             shortcutsPopup.classList.remove('open');
+            helpModal.classList.remove('active');
         }
     });
 
@@ -1244,6 +1308,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let replHistoryIdx = -1;
 
     consoleInputEl.addEventListener('keydown', (e) => {
+        if (e.isComposing) return; // IME変換確定のEnterでは送信しない
         if (e.key === 'Enter') {
             const code = consoleInputEl.value.trim();
             if (!code) return;
@@ -1296,7 +1361,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.onmousemove = e => {
         if (isResizingH) {
             const w = document.querySelector('.workspace').clientWidth;
-            editorPanel.style.flex = `0 0 ${(e.clientX / w) * 100}%`;
+            const pct = Math.max(15, Math.min(85, (e.clientX / w) * 100));
+            editorPanel.style.flex = `0 0 ${pct}%`;
         }
         if (isResizingV && !isConsoleCollapsed) {
             const pane = document.querySelector('.right-pane');
